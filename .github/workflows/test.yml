@@ -57,6 +57,8 @@ jobs:
 
       - name: Run tests
         run: yarn test
+        env:
+          ELECTRON_DISABLE_SANDBOX: 1
 
       - name: Upload test results
         if: always()
@@ -87,6 +89,8 @@ jobs:
 
       - name: Run tests
         run: yarn test
+        env:
+          ELECTRON_DISABLE_SANDBOX: 1
 
       - name: Upload test results
         if: always()

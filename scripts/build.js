@@ -44,7 +44,7 @@ esbuild.build({
   );
 
   // Build Tailwind CSS (via PostCSS)
-  execSync('./node_modules/.bin/postcss ./src/renderer/styles.css -o ./dist/renderer/styles.css', {
+  execSync('npx postcss ./src/renderer/styles.css -o ./dist/renderer/styles.css', {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit',
   });
