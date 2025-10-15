@@ -16,6 +16,12 @@ test.beforeAll(async () => {
     args: [path.join(__dirname, '../dist/main/index.js')],
     timeout: 60000,
   });
+
+  // Capture Electron console output
+  electronApp.on('console', (msg) => {
+    console.log(`[Electron] ${msg.text()}`);
+  });
+
   page = await electronApp.firstWindow();
   await page.waitForTimeout(2000);
 });
