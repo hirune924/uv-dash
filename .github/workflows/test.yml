@@ -19,6 +19,9 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
@@ -48,6 +51,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+
+      - name: Install uv
+        run: irm https://astral.sh/uv/install.ps1 | iex
+        shell: powershell
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -80,6 +87,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Install dependencies
         run: |
