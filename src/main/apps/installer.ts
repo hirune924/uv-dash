@@ -252,9 +252,9 @@ async function runUvSync(
       }
     }
 
-    onLog('Running uv sync --frozen...');
+    onLog('Running uv sync --frozen --no-dev...');
 
-    const uvProcess = spawn(getUvCommand(), ['sync', '--frozen'], {
+    const uvProcess = spawn(getUvCommand(), ['sync', '--frozen', '--no-dev'], {
       cwd: installPath,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
