@@ -273,13 +273,6 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
 
     await page.screenshot({ path: 'test-results/port-6-before-restart.png', fullPage: true });
 
-    // Stop the Flask app before closing Electron to avoid long shutdown times
-    console.log('[TEST] Stopping Flask app before Electron restart...');
-    const stopButton = flaskCard.locator('button:has-text("Stop")');
-    await stopButton.click();
-    await page.waitForTimeout(2000);
-    console.log('[TEST] Flask app stopped');
-
     // Close and reopen Electron (simulates app restart)
     console.log('[TEST] Closing Electron...');
     await electronApp.close();
@@ -306,22 +299,22 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await page.screenshot({ path: 'test-results/port-7-after-restart.png', fullPage: true });
 
     // After restart, running apps should be set to "installed"
-    // Port is persisted in file but not displayed in UI (since app isn't running)
+    // Port is cleared on restart since apps are no longer running
     bodyText = await page.textContent('body');
     expect(bodyText).toContain('flask-test-app');
     expect(bodyText).toContain('Ready'); // Should be in Ready state, not Running
 
-    // UI should NOT show port (app is not running, even though port is persisted)
+    // UI should NOT show port (app is not running)
     expect(bodyText).not.toMatch(/localhost:\d+/);
 
-    // Verify in apps.json - port SHOULD be persisted (survives restart)
+    // Verify in apps.json - port should be cleared on restart
     const appsJsonPath = path.join(os.homedir(), '.uvdash', 'apps.json');
     const content = fs.readFileSync(appsJsonPath, 'utf-8');
     const appsData = JSON.parse(content);
     const appId = Object.keys(appsData)[0];
     const app = appsData[appId];
 
-    // Note: Port IS persisted across restarts, but status/pid are runtime-only
-    expect(app.port).toBe(detectedPort);
+    // Note: Port is cleared on restart since runtime state (pid/port) is not persisted
+    expect(app.port).toBeUndefined();
   });
 });

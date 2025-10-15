@@ -72,12 +72,13 @@ app.whenReady().then(() => {
   // Load persisted app information
   const persistedApps = loadApps();
   for (const [id, appInfo] of persistedApps.entries()) {
-    // On app startup, all apps are in stopped state, so clear pid/port
+    // On app startup, all apps should be in stopped state
+    // Runtime state (pid/port) should have been cleaned in before-quit
     apps.set(id, {
       ...appInfo,
       status: appInfo.status === 'running' ? 'installed' : appInfo.status,
-      pid: undefined,
-      port: undefined,
+      pid: undefined, // PID is always runtime-only
+      // port is preserved from persisted data (will be undefined if properly cleaned on last shutdown)
     });
   }
 
@@ -100,33 +101,55 @@ app.on('window-all-closed', () => {
 
 // Force stop all running processes when app is quitting
 app.on('before-quit', async (event) => {
-  const { isRunning } = await import('./apps/runner');
+  const { isRunning, stopApp: stopAppProcess } = await import('./apps/runner');
   const runningAppIds = Array.from(apps.entries())
     .filter(([id]) => isRunning(id))
-    .map(([id, app]) => ({ id, pid: app.pid }));
+    .map(([id]) => id);
 
   if (runningAppIds.length > 0) {
     event.preventDefault(); // Prevent quitting temporarily
 
-    // Force kill process tree with tree-kill
-    const kill = (await import('tree-kill')).default;
-    const killPromises = runningAppIds
-      .filter(({ pid }) => pid)
-      .map(({ id, pid }) => {
-        return new Promise<void>((resolve) => {
-          console.log(`[${id}] Force killing (PID: ${pid})`);
-          kill(pid!, 'SIGKILL', (error) => {
-            if (error) {
-              console.log(`[${id}] Force kill error: ${error.message}`);
-            } else {
-              console.log(`[${id}] Force killed successfully`);
-            }
-            resolve();
-          });
-        });
-      });
+    console.log(`[before-quit] Stopping ${runningAppIds.length} running app(s)...`);
 
-    await Promise.all(killPromises);
+    // Use stopApp() which handles graceful shutdown properly
+    // On Windows: immediate force kill
+    // On Unix/macOS: SIGTERM with SIGKILL timeout
+    const stopPromises = runningAppIds.map(async (id) => {
+      console.log(`[before-quit] Stopping app ${id}...`);
+      try {
+        await stopAppProcess(id, (message) => {
+          console.log(`[${id}] ${message}`);
+        });
+        console.log(`[before-quit] App ${id} stop initiated`);
+      } catch (error) {
+        console.log(`[before-quit] Error stopping app ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+
+    await Promise.all(stopPromises);
+
+    // Give processes a moment to clean up (especially on Unix/macOS where we use SIGTERM first)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Clean up runtime state (pid/port) for all stopped apps
+    // Since app.quit() will terminate immediately, onProcessStopped callbacks won't fire
+    // So we need to manually clean up and save state here
+    console.log(`[before-quit] Cleaning up runtime state for stopped apps...`);
+    for (const id of runningAppIds) {
+      const app = apps.get(id);
+      if (app) {
+        apps.set(id, {
+          ...app,
+          status: 'installed' as const,
+          pid: undefined,
+          port: undefined,
+        });
+      }
+    }
+    saveApps(apps); // Persist cleaned state
+    console.log(`[before-quit] Runtime state cleaned and saved`);
+
+    console.log(`[before-quit] All apps stopped, quitting...`);
 
     // After all processes are stopped, quit the app
     app.quit();
