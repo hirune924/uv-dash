@@ -171,6 +171,9 @@ function setupProcessHandlers(
   });
 
   proc.on('error', (error) => {
+    onLog(`[ERROR] Process error: ${error.message}`);
+    onLog(`[ERROR] Error name: ${error.name}`);
+    onLog(`[ERROR] Error stack: ${error.stack || 'N/A'}`);
     onLog(i18n.t('apps:error.process', { error: error.message }));
     runningProcesses.delete(appId);
 
@@ -189,7 +192,8 @@ function setupProcessHandlers(
     }
   });
 
-  proc.on('close', (code) => {
+  proc.on('close', (code, signal) => {
+    onLog(`[DEBUG] Process closed with code: ${code}, signal: ${signal || 'none'}`);
     onLog(i18n.t('apps:process.exited', { code }));
     runningProcesses.delete(appId);
 
@@ -404,7 +408,14 @@ export async function runApp(
       } else if (commandArgs[1] === 'x' || commandArgs[1] === '--with') {
         // If "uvx" or "uv x", use as-is (completely replace uv command)
         onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
-        const proc = spawn(getUvCommand(), commandArgs.slice(1), {
+        const uvCmd = getUvCommand();
+        const fullCommand = [uvCmd, ...commandArgs.slice(1)].join(' ');
+        onLog(`[DEBUG] UV command: ${uvCmd}`);
+        onLog(`[DEBUG] Working directory: ${installPath}`);
+        onLog(`[DEBUG] Full command: ${fullCommand}`);
+        onLog(`[DEBUG] PATH: ${process.env.PATH}`);
+
+        const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
           stdio: ['ignore', 'pipe', 'pipe'],
           env: {
@@ -412,12 +423,21 @@ export async function runApp(
             ...env,
           },
         });
+
+        onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
         // Common post-processing for proc
         return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
       } else {
         // Other uv subcommands (uv sync etc.) use as-is
         onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
-        const proc = spawn(getUvCommand(), commandArgs.slice(1), {
+        const uvCmd = getUvCommand();
+        const fullCommand = [uvCmd, ...commandArgs.slice(1)].join(' ');
+        onLog(`[DEBUG] UV command: ${uvCmd}`);
+        onLog(`[DEBUG] Working directory: ${installPath}`);
+        onLog(`[DEBUG] Full command: ${fullCommand}`);
+        onLog(`[DEBUG] PATH: ${process.env.PATH}`);
+
+        const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
           stdio: ['ignore', 'pipe', 'pipe'],
           env: {
@@ -425,14 +445,24 @@ export async function runApp(
             ...env,
           },
         });
+
+        onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
         return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
       }
     } else {
       onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
     }
 
+    // Log detailed spawn information for debugging
+    const uvCmd = getUvCommand();
+    const fullCommand = [uvCmd, 'run', ...commandArgs].join(' ');
+    onLog(`[DEBUG] UV command: ${uvCmd}`);
+    onLog(`[DEBUG] Working directory: ${installPath}`);
+    onLog(`[DEBUG] Full command: ${fullCommand}`);
+    onLog(`[DEBUG] PATH: ${process.env.PATH}`);
+
     // Execute command with uv run
-    const proc = spawn(getUvCommand(), ['run', ...commandArgs], {
+    const proc = spawn(uvCmd, ['run', ...commandArgs], {
       cwd: installPath,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
@@ -440,6 +470,9 @@ export async function runApp(
         ...env, // Add user-defined environment variables
       },
     });
+
+    // Log spawn result
+    onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
 
     return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
   } catch (error) {
