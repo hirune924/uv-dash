@@ -91,8 +91,12 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await runButton.click();
     await page.waitForTimeout(5000);
 
-    // Wait for port detection
-    await page.waitForTimeout(8000);
+    // Wait for Stop button to appear (indicates app is running)
+    const stopButton = flaskCard.locator('button:has-text("Stop")');
+    await expect(stopButton).toBeVisible({ timeout: 20000 });
+
+    // Wait for port detection (may take additional time)
+    await page.waitForTimeout(10000);
 
     await page.screenshot({ path: 'test-results/port-2-running-with-port.png', fullPage: true });
 

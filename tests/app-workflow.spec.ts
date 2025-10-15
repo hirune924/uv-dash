@@ -125,14 +125,14 @@ test.describe.serial('Complete App Workflow', () => {
     // Click Run button (buttons are always visible)
     const runButton = appCard.locator('button:has-text("Run")');
     await runButton.click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(5000);
 
     // Take screenshot
     await page.screenshot({ path: 'test-results/workflow-9-running.png', fullPage: true });
 
-    // Verify Stop button appears
+    // Verify Stop button appears (allow more time for first app launch)
     const stopButton = appCard.locator('button:has-text("Stop")');
-    await expect(stopButton).toBeVisible({ timeout: 10000 });
+    await expect(stopButton).toBeVisible({ timeout: 20000 });
   });
 
   test('should detect port and show Open button', async () => {

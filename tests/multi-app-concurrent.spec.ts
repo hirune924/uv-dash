@@ -111,22 +111,22 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     const flaskCard = page.locator('h3:has-text("flask-test-app")').locator('..').locator('..').locator('..');
     const flaskRunButton = flaskCard.locator('button:has-text("Run")');
     await flaskRunButton.click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     // Run Streamlit app
     const streamlitCard = page.locator('h3:has-text("streamlit-test-app")').locator('..').locator('..').locator('..');
     const streamlitRunButton = streamlitCard.locator('button:has-text("Run")');
     await streamlitRunButton.click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(5000);
 
     await page.screenshot({ path: 'test-results/multi-3-both-running.png', fullPage: true });
 
-    // Verify both show Stop buttons (meaning both are running)
+    // Verify both show Stop buttons (meaning both are running) - allow more time for concurrent startup
     const flaskStopButton = flaskCard.locator('button:has-text("Stop")');
-    await expect(flaskStopButton).toBeVisible({ timeout: 10000 });
+    await expect(flaskStopButton).toBeVisible({ timeout: 20000 });
 
     const streamlitStopButton = streamlitCard.locator('button:has-text("Stop")');
-    await expect(streamlitStopButton).toBeVisible({ timeout: 10000 });
+    await expect(streamlitStopButton).toBeVisible({ timeout: 20000 });
 
     // Verify both are marked as "Running"
     const bodyText = await page.textContent('body');

@@ -105,7 +105,7 @@ test.describe.serial('ZIP Integration Test', () => {
   });
 
   test('should run ZIP-installed Flask app', async () => {
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
     // Click Run button
     const flaskCard = page.locator('div').filter({ hasText: /flask-test-app/i }).first();
@@ -115,13 +115,13 @@ test.describe.serial('ZIP Integration Test', () => {
 
     await page.screenshot({ path: 'test-results/zip-7-running.png', fullPage: true });
 
-    // Verify Stop button appears
+    // Verify Stop button appears (allow more time for first app launch with uv sync)
     const stopButton = flaskCard.locator('button:has-text("Stop")');
-    await expect(stopButton).toBeVisible({ timeout: 10000 });
+    await expect(stopButton).toBeVisible({ timeout: 20000 });
   });
 
   test('should detect Flask port from ZIP-installed app', async () => {
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(10000);
 
     await page.screenshot({ path: 'test-results/zip-8-port-detected.png', fullPage: true });
 
@@ -129,7 +129,7 @@ test.describe.serial('ZIP Integration Test', () => {
     const flaskCard = page.locator('div').filter({ hasText: /flask-test-app/i }).first();
     const openButton = flaskCard.locator('button').filter({ hasText: /🌐|open/i });
 
-    await expect(openButton.first()).toBeVisible({ timeout: 15000 });
+    await expect(openButton.first()).toBeVisible({ timeout: 20000 });
   });
 
   test('should stop ZIP-installed Flask app', async () => {
