@@ -83,14 +83,26 @@ test.describe.serial('Complete App Workflow', () => {
   });
 
   test('should find and click Edit button for streamlit-test-app', async () => {
+    console.log('[TEST] Starting Edit button test');
     await page.waitForTimeout(2000);
 
     // Take screenshot
     await page.screenshot({ path: 'test-results/workflow-5-app-list.png', fullPage: true });
 
+    // Check if app is visible in UI
+    const bodyText = await page.textContent('body');
+    console.log('[TEST] Checking for streamlit-test-app in UI...');
+    console.log(`[TEST] Body contains "streamlit-test-app": ${bodyText?.includes('streamlit-test-app')}`);
+    console.log(`[TEST] Body contains "Ready": ${bodyText?.includes('Ready')}`);
+
     // Find and click the Edit button (buttons are always visible)
+    console.log('[TEST] Looking for Edit button...');
     const editButton = page.locator('button[title="Edit"]').first();
+    const isVisible = await editButton.isVisible().catch(() => false);
+    console.log(`[TEST] Edit button visible: ${isVisible}`);
+
     await expect(editButton).toBeVisible({ timeout: 5000 });
+    console.log('[TEST] Edit button found, clicking...');
     await editButton.click();
     await page.waitForTimeout(1000);
 
@@ -98,6 +110,7 @@ test.describe.serial('Complete App Workflow', () => {
     await page.screenshot({ path: 'test-results/workflow-6-edit-modal.png', fullPage: true });
     const modalText = await page.textContent('body');
     expect(modalText).toContain('Edit App');
+    console.log('[TEST] Edit modal opened successfully');
   });
 
   test('should set run command in edit modal', async () => {

@@ -112,6 +112,11 @@ async function prepareSource(
         onLog(`Cloning from GitHub: ${request.sourcePath}`);
         const ref = request.ref || 'main';
 
+        onLog(`[DEBUG] Git clone command: git clone --depth 1 --branch ${ref} ${request.sourcePath} ${installPath}`);
+        onLog(`[DEBUG] Install path: ${installPath}`);
+        onLog(`[DEBUG] Platform: ${process.platform}`);
+        onLog(`[DEBUG] PATH: ${process.env.PATH}`);
+
         const cloneResult = await spawnAsync('git', [
           'clone',
           '--depth', '1',
@@ -120,9 +125,14 @@ async function prepareSource(
           installPath
         ]);
 
+        onLog(`[DEBUG] Git clone result: success=${cloneResult.success}, error=${cloneResult.error || 'none'}`);
+
         if (!cloneResult.success) {
+          onLog(`[ERROR] Git clone failed: ${cloneResult.error}`);
           return { success: false, error: `Failed to clone Git repository: ${cloneResult.error}` };
         }
+
+        onLog('[DEBUG] Git clone completed successfully');
 
         // Move subdirectory if specified
         if (request.subdir) {

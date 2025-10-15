@@ -254,6 +254,8 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
   });
 
   test('should handle port persistence after Electron restart', async () => {
+    console.log('[TEST] Starting Electron restart test');
+
     // Run the app
     const flaskCard = page.locator('h3:has-text("flask-test-app")').locator('..').locator('..').locator('..');
     const runButton = flaskCard.locator('button:has-text("Run")');
@@ -267,19 +269,31 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     let bodyText = await page.textContent('body');
     const portMatch = bodyText.match(/localhost:(\d+)/);
     const detectedPort = parseInt(portMatch![1], 10);
+    console.log(`[TEST] Detected port: ${detectedPort}`);
 
     await page.screenshot({ path: 'test-results/port-6-before-restart.png', fullPage: true });
 
     // Close and reopen Electron (simulates app restart)
+    console.log('[TEST] Closing Electron...');
     await electronApp.close();
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('[TEST] Electron closed, waiting 5 seconds...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Relaunch
+    console.log('[TEST] Relaunching Electron (timeout: 120s)...');
     electronApp = await electron.launch({
       args: [path.join(__dirname, '../dist/main/index.js')],
-      timeout: 60000,
+      timeout: 120000, // Increase timeout to 2 minutes for CI environments
     });
+
+    // Capture console output for relaunched instance
+    electronApp.on('console', (msg) => {
+      console.log(`[Electron Restarted] ${msg.text()}`);
+    });
+
+    console.log('[TEST] Waiting for first window...');
     page = await electronApp.firstWindow();
+    console.log('[TEST] First window obtained, waiting for stabilization...');
     await page.waitForTimeout(3000);
 
     await page.screenshot({ path: 'test-results/port-7-after-restart.png', fullPage: true });
