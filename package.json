@@ -15,12 +15,12 @@
     "package:win": "npm run build && electron-builder --win",
     "package:linux": "npm run build && electron-builder --linux",
     "package:all": "npm run build && electron-builder --mac --win --linux",
-    "test": "npm run build && NODE_ENV=test playwright test",
-    "test:unit": "NODE_ENV=test playwright test port-detection.spec.ts",
-    "test:e2e": "npm run build && NODE_ENV=test playwright test app.spec.ts",
-    "test:workflow": "npm run build && NODE_ENV=test playwright test app-workflow.spec.ts",
-    "test:fixtures": "npm run build && NODE_ENV=test playwright test fixtures-workflow.spec.ts",
-    "test:ui": "npm run build && NODE_ENV=test playwright test --ui"
+    "test": "npm run build && cross-env NODE_ENV=test playwright test",
+    "test:unit": "cross-env NODE_ENV=test playwright test port-detection.spec.ts",
+    "test:e2e": "npm run build && cross-env NODE_ENV=test playwright test app.spec.ts",
+    "test:workflow": "npm run build && cross-env NODE_ENV=test playwright test app-workflow.spec.ts",
+    "test:fixtures": "npm run build && cross-env NODE_ENV=test playwright test fixtures-workflow.spec.ts",
+    "test:ui": "npm run build && cross-env NODE_ENV=test playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
@@ -29,6 +29,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "electron": "^38.2.2",
     "electron-builder": "^26.0.12",
     "electron-icon-builder": "^2.0.1",
