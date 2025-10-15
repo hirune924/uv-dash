@@ -21,6 +21,6 @@ def health():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 0))  # Use 0 for auto port assignment
     print(f' * Running on http://127.0.0.1:{port}')
     app.run(host='0.0.0.0', port=port, debug=False)
