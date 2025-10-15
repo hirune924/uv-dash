@@ -517,11 +517,31 @@ export async function stopApp(
   try {
     onLog(i18n.t('apps:process.stopping'));
 
-    // First try graceful shutdown with SIGTERM (using tree-kill for entire process tree)
-    await new Promise<void>((resolve, reject) => {
+    // On Windows, tree-kill always uses taskkill /F (force kill) regardless of signal
+    // So we can't do graceful shutdown on Windows - it's always immediate force kill
+    const isWindows = process.platform === 'win32';
+
+    if (isWindows) {
+      // Windows: Just kill immediately (tree-kill will use taskkill /T /F)
+      await new Promise<void>((resolve) => {
+        kill(proc.pid!, 'SIGTERM', (error) => {
+          if (error) {
+            onLog(i18n.t('apps:process.sigterm_warning', { message: error.message }));
+          } else {
+            onLog(i18n.t('apps:process.sigterm_sent', { pid: proc.pid }));
+          }
+          resolve();
+        });
+      });
+
+      onLog(i18n.t('apps:process.stop_requested'));
+      return { success: true };
+    }
+
+    // Unix/macOS: Two-stage shutdown (graceful SIGTERM, then force SIGKILL after timeout)
+    await new Promise<void>((resolve) => {
       kill(proc.pid!, 'SIGTERM', (error) => {
         if (error) {
-          // Only warn as process may already be terminated
           onLog(i18n.t('apps:process.sigterm_warning', { message: error.message }));
         } else {
           onLog(i18n.t('apps:process.sigterm_sent', { pid: proc.pid }));
