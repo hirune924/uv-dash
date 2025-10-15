@@ -103,63 +103,9 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Force stop all running processes when app is quitting
-app.on('before-quit', async (event) => {
-  const { isRunning } = await import('./apps/runner');
-  const runningApps = Array.from(apps.entries())
-    .filter(([id]) => isRunning(id))
-    .map(([id, app]) => ({ id, pid: app.pid }));
-
-  if (runningApps.length > 0) {
-    event.preventDefault(); // Prevent quitting temporarily
-
-    console.log(`[before-quit] Stopping ${runningApps.length} running app(s)...`);
-
-    // Force kill all running processes immediately
-    // We can't use stopApp() here because it's async and doesn't wait for process termination
-    // We need to ensure processes are killed AND state is saved before app.quit()
-    const kill = (await import('tree-kill')).default;
-    const killPromises = runningApps
-      .filter(({ pid }) => pid)
-      .map(({ id, pid }) => {
-        return new Promise<void>((resolve) => {
-          console.log(`[before-quit] Force killing app ${id} (PID: ${pid})`);
-          kill(pid!, 'SIGKILL', (error) => {
-            if (error) {
-              console.log(`[before-quit] Error killing ${id}: ${error.message}`);
-            } else {
-              console.log(`[before-quit] App ${id} killed successfully`);
-            }
-            resolve();
-          });
-        });
-      });
-
-    await Promise.all(killPromises);
-    console.log(`[before-quit] All processes killed`);
-
-    // Clean up runtime state (pid/port) for all stopped apps
-    // onProcessStopped callbacks won't fire after app.quit()
-    // So we must manually clean up and save state here
-    console.log(`[before-quit] Cleaning up runtime state...`);
-    for (const { id } of runningApps) {
-      const app = apps.get(id);
-      if (app) {
-        apps.set(id, {
-          ...app,
-          status: 'installed' as const,
-          pid: undefined,
-          port: undefined,
-        });
-      }
-    }
-    saveApps(apps); // Persist cleaned state
-    console.log(`[before-quit] Runtime state cleaned and saved`);
-
-    // After all processes are stopped and state is saved, quit the app
-    app.quit();
-  }
-});
+// Note: We intentionally don't clean up running processes on quit.
+// Child processes will be terminated by the OS when the parent (Electron) exits.
+// State cleanup happens on next startup (Line 87: saveApps after clearing runtime state).
 
 // IPC handlers
 ipcMain.handle('list-apps', async () => {
