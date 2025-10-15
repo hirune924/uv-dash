@@ -20,7 +20,9 @@ jobs:
           cache: 'yarn'
 
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -30,6 +32,8 @@ jobs:
 
       - name: Run tests
         run: yarn test
+        env:
+          PATH: ${{ env.PATH }}:$HOME/.local/bin
 
       - name: Upload test results
         if: always()
@@ -53,7 +57,9 @@ jobs:
           cache: 'yarn'
 
       - name: Install uv
-        run: irm https://astral.sh/uv/install.ps1 | iex
+        run: |
+          irm https://astral.sh/uv/install.ps1 | iex
+          echo "$env:USERPROFILE\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: powershell
 
       - name: Install dependencies
@@ -89,7 +95,9 @@ jobs:
           cache: 'yarn'
 
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: |
@@ -104,6 +112,7 @@ jobs:
         run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" yarn test
         env:
           ELECTRON_DISABLE_SANDBOX: 1
+          PATH: ${{ env.PATH }}:$HOME/.local/bin
 
       - name: Upload test results
         if: always()
