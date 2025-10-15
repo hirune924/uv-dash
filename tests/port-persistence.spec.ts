@@ -273,6 +273,13 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
 
     await page.screenshot({ path: 'test-results/port-6-before-restart.png', fullPage: true });
 
+    // Stop the Flask app before closing Electron to avoid long shutdown times
+    console.log('[TEST] Stopping Flask app before Electron restart...');
+    const stopButton = flaskCard.locator('button:has-text("Stop")');
+    await stopButton.click();
+    await page.waitForTimeout(2000);
+    console.log('[TEST] Flask app stopped');
+
     // Close and reopen Electron (simulates app restart)
     console.log('[TEST] Closing Electron...');
     await electronApp.close();
