@@ -254,6 +254,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
   });
 
   test('should handle port persistence after Electron restart', async () => {
+    test.setTimeout(180000); // 3 minutes - Linux/Windows tree-kill is slow (~120s)
     console.log('[TEST] Starting Electron restart test');
 
     // Run the app
