@@ -82,13 +82,16 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          yarn install --frozen-lockfile
+          sudo apt-get update
+          sudo apt-get install -y xvfb
 
       - name: Build application
         run: yarn build
 
       - name: Run tests
-        run: yarn test
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" yarn test
         env:
           ELECTRON_DISABLE_SANDBOX: 1
 
