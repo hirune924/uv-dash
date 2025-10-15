@@ -1,0 +1,15 @@
+{
+  "secrets": {
+    "required_fields": "Name and Value are required",
+    "create_failed": "Failed to create secret: {{error}}",
+    "update_failed": "Failed to update secret: {{error}}",
+    "delete_confirm": "This secret is used by {{count}} app(s). Are you sure you want to delete it?",
+    "delete_failed": "Failed to delete secret: {{error}}",
+    "no_secrets": "No global secrets configured. Add one to share secrets across multiple apps."
+  },
+  "language": {
+    "title": "Language",
+    "label": "Interface Language:",
+    "description": "Changes apply immediately. This affects all UI text and messages."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "git": {
+    "required": "ℹ️ Git is required to use GitHub integration",
+    "install": "Install Git"
+  }
+}
