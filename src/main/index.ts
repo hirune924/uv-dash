@@ -223,19 +223,27 @@ ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick
 });
 
 ipcMain.handle('run-app', async (_event, appId: string) => {
+  console.log(`[DEBUG] run-app IPC handler called for appId: ${appId}`);
   const app = apps.get(appId);
 
   if (!app) {
+    console.log(`[DEBUG] App not found: ${appId}`);
     return { success: false, error: i18n.t('apps:error.not_found') };
   }
 
+  console.log(`[DEBUG] App status: ${app.status}, installPath: ${app.installPath}, runCommand: ${app.runCommand}`);
+
   if (app.status !== 'installed') {
+    console.log(`[DEBUG] App status is not 'installed': ${app.status}`);
     return { success: false, error: i18n.t('apps:error.not_installed') };
   }
 
   if (isRunning(appId)) {
+    console.log(`[DEBUG] App is already running: ${appId}`);
     return { success: false, error: i18n.t('apps:error.already_running') };
   }
+
+  console.log(`[DEBUG] Calling runAppProcess for ${appId}...`);
 
   // Execute (including environment variables and port detection)
   // Merge env, secrets, and resolved global secrets for process execution
@@ -291,6 +299,8 @@ ipcMain.handle('run-app', async (_event, appId: string) => {
     }
   );
 
+  console.log(`[DEBUG] runAppProcess result: success=${result.success}, pid=${result.pid}, error=${result.error}`);
+
   if (result.success) {
     // Update state
     const runningApp = {
@@ -301,6 +311,7 @@ ipcMain.handle('run-app', async (_event, appId: string) => {
     apps.set(appId, runningApp);
     sendAppUpdated(runningApp); // 5. After successful runApp
     saveApps(apps); // Persist status update
+    console.log(`[DEBUG] App ${appId} successfully started with PID ${result.pid}`);
     return { success: true };
   } else {
     const errorApp = {
@@ -310,6 +321,7 @@ ipcMain.handle('run-app', async (_event, appId: string) => {
     };
     apps.set(appId, errorApp);
     sendAppUpdated(errorApp); // 6. After error runApp
+    console.log(`[DEBUG] Failed to start app ${appId}: ${result.error}`);
     return { success: false, error: result.error };
   }
 });
