@@ -533,8 +533,8 @@ export async function stopApp(
     // Set timeout to force kill with SIGKILL after SIGKILL_TIMEOUT_MS
     // (Will be cleared by close/error event if process exits normally)
     const timeout = setTimeout(() => {
-      // Only force kill if process still exists
-      if (runningProcesses.has(appId) && proc.pid) {
+      // Only force kill if process still exists AND is actually alive
+      if (runningProcesses.has(appId) && proc.pid && isProcessAlive(proc.pid)) {
         onLog(i18n.t('apps:process.force_kill'));
         kill(proc.pid, 'SIGKILL', (error) => {
           if (error) {
@@ -546,7 +546,10 @@ export async function stopApp(
           stoppingProcesses.delete(appId);
         });
       } else {
-        // If process already terminated
+        // If process already terminated, just clean up
+        if (proc.pid) {
+          onLog(`[DEBUG] Process ${proc.pid} already terminated, skipping SIGKILL`);
+        }
         stoppingProcesses.delete(appId);
       }
     }, PROCESS.SIGKILL_TIMEOUT_MS);
