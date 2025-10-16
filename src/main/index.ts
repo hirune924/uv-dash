@@ -15,6 +15,17 @@ import {
 } from './storage/secrets-storage';
 import i18n, { changeLanguage } from './i18n';
 
+// Parse command line arguments for --user-data-dir (for E2E testing)
+const args = process.argv.slice(1);
+const userDataDirIndex = args.findIndex(arg => arg.startsWith('--user-data-dir='));
+if (userDataDirIndex !== -1) {
+  const userDataDir = args[userDataDirIndex].split('=')[1];
+  if (userDataDir) {
+    console.log(`[startup] Setting userData path to: ${userDataDir}`);
+    app.setPath('userData', userDataDir);
+  }
+}
+
 let mainWindow: BrowserWindow | null = null;
 
 // Application list (temporarily held in memory)
