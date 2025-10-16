@@ -89,26 +89,42 @@ function createWindow() {
 
 // Create window when the app is ready
 app.whenReady().then(async () => {
-  // Initialize global secrets
-  initGlobalSecrets();
+  try {
+    console.log('[startup] App ready, initializing...');
 
-  // Load persisted app information and attempt to recover running processes
-  const persistedApps = loadApps();
-  const { isProcessAlive, isPortInUse } = await import('./apps/process-monitor');
+    // Initialize global secrets
+    initGlobalSecrets();
 
-  for (const [id, appInfo] of persistedApps.entries()) {
-    // Attempt to recover running processes
-    const hasPid = appInfo.pid !== undefined;
-    const hasPort = appInfo.port !== undefined;
+    // Load persisted app information and attempt to recover running processes
+    const persistedApps = loadApps();
+    console.log(`[startup] Loaded ${persistedApps.size} apps from persistence`);
 
-    if (hasPid && hasPort) {
-      // Check if both PID and port are still valid
-      const pidAlive = isProcessAlive(appInfo.pid!);
-      const portInUse = await isPortInUse(appInfo.port!);
+    if (persistedApps.size > 0) {
+      console.log('[startup] Apps detail:', JSON.stringify(Array.from(persistedApps.entries()).map(([id, app]) => ({
+        id,
+        name: app.name,
+        status: app.status,
+        pid: app.pid,
+        port: app.port
+      }))));
+    }
 
-      if (pidAlive && portInUse) {
-        // Process is still running! Recover it
-        console.log(`[startup] Recovering running app ${id} (PID: ${appInfo.pid}, Port: ${appInfo.port})`);
+    const { isProcessAlive, isPortInUse } = await import('./apps/process-monitor');
+
+    for (const [id, appInfo] of persistedApps.entries()) {
+      // Attempt to recover running processes
+      const hasPid = appInfo.pid !== undefined;
+      const hasPort = appInfo.port !== undefined;
+
+      if (hasPid && hasPort) {
+        // Check if both PID and port are still valid
+        const pidAlive = isProcessAlive(appInfo.pid!);
+        const portInUse = await isPortInUse(appInfo.port!);
+        console.log(`[startup] App ${id}: pid=${appInfo.pid} alive=${pidAlive}, port=${appInfo.port} inUse=${portInUse}`);
+
+        if (pidAlive && portInUse) {
+          // Process is still running! Recover it
+          console.log(`[startup] Recovering running app ${id} (PID: ${appInfo.pid}, Port: ${appInfo.port})`);
 
         // Register process with runner so Stop button works
         recoverProcess(
@@ -153,17 +169,27 @@ app.whenReady().then(async () => {
     });
   }
 
-  // Persist the cleaned/recovered state back to file
-  saveApps(apps);
+    // Persist the cleaned/recovered state back to file
+    console.log(`[startup] Saving ${apps.size} apps to persistence`);
+    saveApps(apps);
 
-  createWindow();
+    console.log('[startup] Creating window...');
+    createWindow();
 
-  // On macOS, recreate window when dock icon is clicked
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
+    // On macOS, recreate window when dock icon is clicked
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+
+    console.log('[startup] Initialization complete');
+  } catch (error) {
+    console.error('[startup] FATAL ERROR during initialization:', error);
+    console.error('[startup] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    // Still try to create window so user can see error
+    createWindow();
+  }
 });
 
 // Quit app when all windows are closed (except on macOS)

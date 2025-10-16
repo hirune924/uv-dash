@@ -27,6 +27,7 @@ interface PersistedAppInfo extends Omit<AppInfo, 'status' | 'errorMessage'> {
 export function saveApps(apps: Map<string, AppInfo>): void {
   try {
     const filePath = getStorageFilePath();
+    console.log(`[persistence] Saving to: ${filePath}`);
 
     // Extract only information to persist
     const persistedApps: Record<string, PersistedAppInfo> = {};
@@ -52,11 +53,14 @@ export function saveApps(apps: Map<string, AppInfo>): void {
         pid: app.pid, // Save PID for process recovery
         port: app.port, // Save port for process recovery
       };
+
+      console.log(`[persistence] Saving app ${id}: pid=${app.pid}, port=${app.port}`);
     }
 
     fs.writeFileSync(filePath, JSON.stringify(persistedApps, null, 2), 'utf-8');
+    console.log(`[persistence] Successfully saved ${Object.keys(persistedApps).length} apps`);
   } catch (error) {
-    console.error('Failed to save apps:', error);
+    console.error('[persistence] Failed to save apps:', error);
   }
 }
 
@@ -66,12 +70,15 @@ export function loadApps(): Map<string, AppInfo> {
 
   try {
     const filePath = getStorageFilePath();
+    console.log(`[persistence] Loading from: ${filePath}`);
 
     if (!fs.existsSync(filePath)) {
+      console.log(`[persistence] File does not exist, returning empty map`);
       return apps; // Return empty Map if file doesn't exist
     }
 
     const content = fs.readFileSync(filePath, 'utf-8');
+    console.log(`[persistence] File content (${content.length} chars):`, content.substring(0, 500));
     const persistedApps: Record<string, PersistedAppInfo> = JSON.parse(content);
 
     for (const [id, persistedApp] of Object.entries(persistedApps)) {
@@ -79,16 +86,21 @@ export function loadApps(): Map<string, AppInfo> {
       const decryptedSecrets = persistedApp.secrets ? decryptSecrets(persistedApp.secrets) : undefined;
 
       // Set status to 'installed' when restoring
-      apps.set(id, {
+      const restoredApp = {
         ...persistedApp,
         secrets: decryptedSecrets,
-        status: 'installed',
-      });
+        status: 'installed' as const,
+      };
+      apps.set(id, restoredApp);
+
+      console.log(`[persistence] Loaded app ${id}: pid=${persistedApp.pid}, port=${persistedApp.port}`);
     }
 
+    console.log(`[persistence] Successfully loaded ${apps.size} apps`);
     return apps;
   } catch (error) {
-    console.error('Failed to load apps:', error);
+    console.error('[persistence] Failed to load apps:', error);
+    console.error('[persistence] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return apps;
   }
 }
