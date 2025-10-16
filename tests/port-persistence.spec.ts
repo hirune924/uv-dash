@@ -3,6 +3,7 @@ import type { ElectronApplication, Page } from '@playwright/test';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import { spawn } from 'child_process';
 import { TestEnvironment } from './helpers/test-env';
 
 let electronApp: ElectronApplication;
@@ -14,6 +15,151 @@ const FLASK_RUN_COMMAND = 'python app.py';
 
 // Parse extra launch arguments from environment variable (for CI stability)
 const extraArgs = process.env.ELECTRON_EXTRA_LAUNCH_ARGS?.split(' ').filter(arg => arg.length > 0) || [];
+
+// Utility functions for safe Electron process termination
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const isAlive = (pid: number) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+
+async function killElectronTree(pid: number) {
+  console.log(`[TEST] Killing Electron process tree (PID: ${pid})`);
+
+  if (process.platform === 'win32') {
+    // Windows: 2-stage kill (graceful then force)
+    console.log('[TEST] Stage 1: Graceful termination');
+    spawn('taskkill', ['/PID', String(pid), '/T'], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+
+    await delay(1200);
+
+    console.log('[TEST] Stage 2: Forced termination');
+    spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+  } else {
+    // POSIX: Kill children first (while parent is alive), then parent
+    console.log('[TEST] Sending SIGTERM to children');
+    spawn('pkill', ['-TERM', '-P', String(pid)], { stdio: 'ignore' })
+      .on('error', () => {});
+
+    await delay(300);
+
+    console.log('[TEST] Sending SIGTERM to process group');
+    try {
+      process.kill(-pid, 'SIGTERM');
+    } catch (e) {
+      console.log('[TEST] SIGTERM to process group failed (may be dead)');
+    }
+
+    await delay(800);
+
+    console.log('[TEST] Sending SIGKILL to process group');
+    try {
+      process.kill(-pid, 'SIGKILL');
+    } catch (e) {
+      console.log('[TEST] SIGKILL to process group failed (already dead)');
+    }
+
+    // Final cleanup for any remaining orphans
+    spawn('pkill', ['-KILL', '-P', String(pid)], { stdio: 'ignore' })
+      .on('error', () => {});
+  }
+}
+
+async function waitForProcessGone(pid: number, timeoutMs = 15000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (!isAlive(pid)) {
+      console.log(`[TEST] Process ${pid} confirmed dead after ${Date.now() - start}ms`);
+      return;
+    }
+    await delay(200);
+  }
+  throw new Error(`Process ${pid} did not exit within ${timeoutMs}ms`);
+}
+
+function cleanChromiumSingletons(userDataDir: string) {
+  if (!userDataDir) {
+    console.log('[TEST] Skipping singleton cleanup (no userDataDir provided)');
+    return;
+  }
+
+  console.log(`[TEST] Cleaning Chromium singleton files in ${userDataDir}`);
+  const files = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
+  const dirs = ['GPUCache', 'Code Cache', 'Service Worker'];
+
+  let cleanedFiles = 0;
+  let cleanedDirs = 0;
+
+  for (const file of files) {
+    try {
+      const filePath = path.join(userDataDir, file);
+      if (fs.existsSync(filePath)) {
+        fs.rmSync(filePath, { force: true });
+        cleanedFiles++;
+      }
+    } catch (e) {
+      console.log(`[TEST] Failed to remove ${file}:`, e);
+    }
+  }
+
+  for (const dir of dirs) {
+    try {
+      const dirPath = path.join(userDataDir, dir);
+      if (fs.existsSync(dirPath)) {
+        fs.rmSync(dirPath, { recursive: true, force: true });
+        cleanedDirs++;
+      }
+    } catch (e) {
+      console.log(`[TEST] Failed to remove ${dir}:`, e);
+    }
+  }
+
+  console.log(`[TEST] Cleaned ${cleanedFiles} files and ${cleanedDirs} directories`);
+}
+
+async function closeElectronSafely(electronApp: ElectronApplication, userDataDir?: string) {
+  const pid = electronApp.process().pid;
+  console.log(`[TEST] Closing Electron safely (PID: ${pid}, userDataDir: ${userDataDir || 'not provided'})`);
+
+  // Try normal close with timeout
+  const closePromise = electronApp.close()
+    .then(() => 'closed')
+    .catch((e) => {
+      console.log(`[TEST] electronApp.close() error: ${e.message}`);
+      return 'error';
+    });
+
+  const timeoutPromise = delay(10000).then(() => 'timeout');
+  const result = await Promise.race([closePromise, timeoutPromise]);
+
+  console.log(`[TEST] close() result: ${result}`);
+
+  if (result !== 'closed') {
+    console.log('[TEST] Normal close failed, forcing process tree kill');
+    await killElectronTree(pid!);
+  } else {
+    console.log('[TEST] Normal close succeeded');
+  }
+
+  // Wait for complete termination
+  try {
+    await waitForProcessGone(pid!, 15000);
+  } catch (e) {
+    console.warn(`[TEST] waitForProcessGone failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  // Clean up singleton locks (only if userDataDir is provided)
+  if (userDataDir) {
+    cleanChromiumSingletons(userDataDir);
+  } else {
+    console.log('[TEST] Skipping singleton cleanup (no userDataDir provided)');
+  }
+
+  console.log('[TEST] Electron termination complete');
+}
 
 test.describe.serial('Port Persistence and Lifecycle', () => {
   test.beforeAll(async () => {
@@ -287,9 +433,12 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
 
     // Close and reopen Electron (app process should continue running)
     console.log('[TEST] Closing Electron...');
-    await electronApp.close();
-    console.log('[TEST] Electron closed, waiting 3 seconds...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Only use E2E_USER_DATA_DIR if set (to avoid cleaning production data)
+    const userDataDir = process.env.E2E_USER_DATA_DIR;
+    await closeElectronSafely(electronApp, userDataDir);
+
+    console.log('[TEST] Waiting 3 seconds before relaunch...');
+    await delay(3000);
 
     // Relaunch
     console.log('[TEST] Relaunching Electron...');
