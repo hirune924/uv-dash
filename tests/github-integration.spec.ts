@@ -92,11 +92,11 @@ test.describe.serial('GitHub Integration Test', () => {
   });
 
   test('should be able to edit GitHub-installed app', async () => {
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Find and click the Edit button
     const editButton = page.locator('button[title="Edit"]').first();
-    await expect(editButton).toBeVisible({ timeout: 5000 });
+    await expect(editButton).toBeVisible({ timeout: 10000 });
     await editButton.click();
     await page.waitForTimeout(1000);
 

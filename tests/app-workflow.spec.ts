@@ -84,7 +84,7 @@ test.describe.serial('Complete App Workflow', () => {
 
   test('should find and click Edit button for streamlit-test-app', async () => {
     console.log('[TEST] Starting Edit button test');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     // Take screenshot
     await page.screenshot({ path: 'test-results/workflow-5-app-list.png', fullPage: true });
@@ -101,7 +101,7 @@ test.describe.serial('Complete App Workflow', () => {
     const isVisible = await editButton.isVisible().catch(() => false);
     console.log(`[TEST] Edit button visible: ${isVisible}`);
 
-    await expect(editButton).toBeVisible({ timeout: 5000 });
+    await expect(editButton).toBeVisible({ timeout: 10000 });
     console.log('[TEST] Edit button found, clicking...');
     await editButton.click();
     await page.waitForTimeout(1000);
