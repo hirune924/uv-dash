@@ -19,6 +19,17 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build application
+        run: yarn build
+
+      - name: Test UV installation flow (before installing uv)
+        run: yarn test:uv
+        env:
+          CI: true
+
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -28,12 +39,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           uv --version
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Build application
-        run: yarn build
 
       - name: Run tests
         run: yarn test
@@ -59,18 +64,6 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Install uv
-        run: |
-          irm https://astral.sh/uv/install.ps1 | iex
-          echo "$env:USERPROFILE\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        shell: powershell
-
-      - name: Verify uv installation
-        run: |
-          $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
-          uv --version
-        shell: powershell
-
       - name: Set CI environment flags
         shell: pwsh
         run: |
@@ -82,6 +75,25 @@ jobs:
 
       - name: Build application
         run: yarn build
+
+      - name: Test UV installation flow (before installing uv)
+        shell: pwsh
+        run: yarn test:uv
+        env:
+          CI: true
+          ELECTRON_DISABLE_SANDBOX: 1
+
+      - name: Install uv
+        run: |
+          irm https://astral.sh/uv/install.ps1 | iex
+          echo "$env:USERPROFILE\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: powershell
+
+      - name: Verify uv installation
+        run: |
+          $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
+          uv --version
+        shell: powershell
 
       - name: Run tests
         shell: pwsh
@@ -110,16 +122,6 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Verify uv installation
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          uv --version
-
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
@@ -143,6 +145,21 @@ jobs:
 
       - name: Build application
         run: yarn build
+
+      - name: Test UV installation flow (before installing uv)
+        run: yarn test:uv
+        env:
+          CI: true
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify uv installation
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv --version
 
       - name: Run tests
         run: yarn test
