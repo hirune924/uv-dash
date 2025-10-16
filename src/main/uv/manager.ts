@@ -81,7 +81,7 @@ export async function installUv(
     // Easier to use installation script
     // Execute official installation script
     const installScript = platform === 'win32'
-      ? 'powershell -c "irm https://astral.sh/uv/install.ps1 | iex"'
+      ? 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
       : 'curl -LsSf https://astral.sh/uv/install.sh | sh';
 
     onProgress?.('Running installation script...');
