@@ -97,15 +97,28 @@ export async function installUv(
 
       // Log stdout and stderr for debugging
       if (result.stdout) {
-        onProgress?.(`stdout: ${result.stdout.substring(0, 200)}`);
+        onProgress?.(`stdout: ${result.stdout}`);
       }
       if (result.stderr) {
-        onProgress?.(`stderr: ${result.stderr.substring(0, 200)}`);
+        onProgress?.(`stderr: ${result.stderr}`);
       }
 
       onProgress?.('uv installation completed');
-    } catch (execError) {
-      onProgress?.(`Installation script error: ${execError instanceof Error ? execError.message : String(execError)}`);
+    } catch (execError: any) {
+      // Log complete error information for debugging
+      onProgress?.(`Installation script failed`);
+      onProgress?.(`Error message: ${execError.message || String(execError)}`);
+
+      if (execError.stdout) {
+        onProgress?.(`stdout: ${execError.stdout}`);
+      }
+      if (execError.stderr) {
+        onProgress?.(`stderr: ${execError.stderr}`);
+      }
+      if (execError.code) {
+        onProgress?.(`Exit code: ${execError.code}`);
+      }
+
       throw execError;
     }
 
