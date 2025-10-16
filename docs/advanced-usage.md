@@ -4,12 +4,90 @@ This guide covers advanced usage patterns for UV Dash.
 
 ## Table of Contents
 
+- [Process Lifecycle and Survival](#process-lifecycle-and-survival)
 - [Running Multiple Processes](#running-multiple-processes)
 - [Pre-hook and Post-hook Patterns](#pre-hook-and-post-hook-patterns)
 - [Custom Run Scripts](#custom-run-scripts)
 - [Environment Variables](#environment-variables)
 - [Port Configuration](#port-configuration)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Process Lifecycle and Survival
+
+### Background Process Behavior
+
+**Important:** When UV Dash closes or restarts, your running applications **continue to run in the background**. This design choice provides several benefits:
+
+- **Crash Recovery**: If UV Dash crashes, your applications keep running
+- **Zero Downtime Updates**: Update UV Dash without stopping your apps
+- **Independent Operation**: Applications run independently of the GUI
+
+### Process Recovery on Startup
+
+When UV Dash starts up, it automatically detects and reconnects to any running processes:
+
+1. **PID Check**: Verifies if the process ID is still alive
+2. **Port Check**: Confirms the port is still in use
+3. **Status Recovery**: If both checks pass, the app is marked as "Running"
+4. **UI Update**: The app card shows the correct status, port, and controls
+
+**Example Scenario:**
+
+```
+1. Start Flask app in UV Dash → Port 5000, PID 1234
+2. Close UV Dash (Flask keeps running on port 5000)
+3. Reopen UV Dash → Detects PID 1234 and port 5000
+4. App card shows "Running" with working Stop button
+```
+
+### Manual Stop Required
+
+Since processes survive UV Dash restart, you must explicitly click the **Stop** button to terminate an application. Simply closing UV Dash will not stop running apps.
+
+### When Process Recovery Fails
+
+If either the PID or port check fails during startup, UV Dash will:
+
+- Clear the saved PID and port
+- Mark the app as "Ready" (not running)
+- Remove runtime state from `apps.json`
+
+**Common reasons for recovery failure:**
+
+- Process was manually killed (e.g., `kill <PID>`)
+- Port was released (application crashed after UV Dash closed)
+- System restart (all processes terminated)
+
+### Checking Running Processes Manually
+
+To see if your app is running outside UV Dash:
+
+**macOS/Linux:**
+```bash
+# Check if process is running
+ps aux | grep python
+
+# Check if port is in use
+lsof -i :5000
+```
+
+**Windows:**
+```powershell
+# Check if process is running
+Get-Process python
+
+# Check if port is in use
+netstat -ano | findstr :5000
+```
+
+### Best Practices
+
+1. **Always use Stop button**: Don't rely on closing UV Dash to stop apps
+2. **Monitor resource usage**: Check the Apps tab for CPU/memory metrics
+3. **Check port conflicts**: If recovery fails unexpectedly, verify the port is free
+4. **Use health checks**: Implement `/health` endpoints for better monitoring
 
 ---
 

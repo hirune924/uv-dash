@@ -17,9 +17,10 @@ function getStorageFilePath(): string {
   return path.join(uvdashDir, 'apps.json');
 }
 
-// App information for persistence (excluding runtime temporary information)
-interface PersistedAppInfo extends Omit<AppInfo, 'status' | 'pid' | 'errorMessage'> {
-  // status will be reset to 'installed' when restored
+// App information for persistence
+// Note: Now includes pid/port for process recovery after restart
+interface PersistedAppInfo extends Omit<AppInfo, 'status' | 'errorMessage'> {
+  // status will be determined on restore (running if process alive, else installed)
 }
 
 // Save app information
@@ -48,7 +49,8 @@ export function saveApps(apps: Map<string, AppInfo>): void {
         runCommand: app.runCommand,
         env: app.env,
         secrets: encryptedSecrets,
-        port: app.port,
+        pid: app.pid, // Save PID for process recovery
+        port: app.port, // Save port for process recovery
       };
     }
 

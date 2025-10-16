@@ -16,6 +16,7 @@ interface ProcessInfo {
   startTime: number;
   appId: string;
   installPath: string;
+  onProcessStopped?: () => void;
 }
 
 /**
@@ -218,6 +219,7 @@ function setupProcessHandlers(
     startTime: Date.now(),
     appId,
     installPath: '', // Set later
+    onProcessStopped,
   };
   runningProcesses.set(appId, processInfo);
 
@@ -506,6 +508,10 @@ export async function stopApp(
     return { success: false, error: i18n.t('apps:error.no_pid') };
   }
 
+  // Check if this is a recovered process (mock ChildProcess)
+  // Recovered processes don't have real stdout/stderr
+  const isRecoveredProcess = !proc.stdout && !proc.stderr;
+
   // Stop health check polling
   stopHealthPolling(appId);
 
@@ -535,6 +541,17 @@ export async function stopApp(
       });
 
       onLog(i18n.t('apps:process.stop_requested'));
+
+      // For recovered processes, manually clean up since no close event will fire
+      if (isRecoveredProcess) {
+        onLog(i18n.t('apps:process.stopped'));
+        runningProcesses.delete(appId);
+        // Call the callback to update UI
+        if (processInfo.onProcessStopped) {
+          processInfo.onProcessStopped();
+        }
+      }
+
       return { success: true };
     }
 
@@ -564,6 +581,16 @@ export async function stopApp(
           }
           // Remove timeout record (fallback if not removed by close event)
           stoppingProcesses.delete(appId);
+
+          // For recovered processes, manually clean up
+          if (isRecoveredProcess) {
+            onLog(i18n.t('apps:process.stopped'));
+            runningProcesses.delete(appId);
+            // Call the callback to update UI
+            if (processInfo.onProcessStopped) {
+              processInfo.onProcessStopped();
+            }
+          }
         });
       } else {
         // If process already terminated, just clean up
@@ -571,6 +598,16 @@ export async function stopApp(
           onLog(`[DEBUG] Process ${proc.pid} already terminated, skipping SIGKILL`);
         }
         stoppingProcesses.delete(appId);
+
+        // For recovered processes, manually clean up since no close event
+        if (isRecoveredProcess) {
+          onLog(i18n.t('apps:process.stopped'));
+          runningProcesses.delete(appId);
+          // Call the callback to update UI
+          if (processInfo.onProcessStopped) {
+            processInfo.onProcessStopped();
+          }
+        }
       }
     }, PROCESS.SIGKILL_TIMEOUT_MS);
 
@@ -586,6 +623,61 @@ export async function stopApp(
       error: i18n.t('apps:error.stop_failed', { message: error instanceof Error ? error.message : String(error) }),
     };
   }
+}
+
+/**
+ * Recover a process that survived application restart
+ * Creates a mock ChildProcess wrapper to enable stopping the process
+ * @param appId - Application ID
+ * @param pid - Process ID
+ * @param installPath - Installation path
+ * @param onLog - Log callback
+ * @param onProcessStopped - Callback when process is stopped
+ */
+export function recoverProcess(
+  appId: string,
+  pid: number,
+  installPath: string,
+  onLog: (message: string) => void,
+  onProcessStopped?: () => void
+): void {
+  // Create a mock ChildProcess-like object
+  // We can't fully recreate a ChildProcess, but we can create an object
+  // that has the minimum properties needed for stopping
+  const mockProcess = {
+    pid,
+    kill: (signal?: NodeJS.Signals | number) => {
+      // Use kill directly on the PID
+      try {
+        process.kill(pid, signal as NodeJS.Signals);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    },
+    // Add stubs for event handlers (won't be called for recovered processes)
+    stdout: null,
+    stderr: null,
+    stdin: null,
+    on: () => mockProcess,
+    once: () => mockProcess,
+    removeListener: () => mockProcess,
+  } as unknown as ChildProcess;
+
+  const processInfo: ProcessInfo = {
+    process: mockProcess,
+    startTime: Date.now(), // We don't know the actual start time, use current time
+    appId,
+    installPath,
+    onProcessStopped,
+  };
+
+  runningProcesses.set(appId, processInfo);
+
+  // Start health check polling for the recovered process
+  startHealthPolling(appId, onLog, onProcessStopped);
+
+  console.log(`[runner] Recovered process for app ${appId} with PID ${pid}`);
 }
 
 /**

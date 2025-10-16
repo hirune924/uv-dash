@@ -253,9 +253,9 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await page.screenshot({ path: 'test-results/port-5-final-state.png', fullPage: true });
   });
 
-  test('should handle port persistence after Electron restart', async () => {
-    test.setTimeout(180000); // 3 minutes - Linux/Windows tree-kill is slow (~120s)
-    console.log('[TEST] Starting Electron restart test');
+  test('should recover running app after Electron restart', async () => {
+    test.setTimeout(180000); // 3 minutes for safety
+    console.log('[TEST] Starting Electron restart test with process survival');
 
     // Run the app
     const flaskCard = page.locator('h3:has-text("flask-test-app")').locator('..').locator('..').locator('..');
@@ -266,25 +266,33 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     // Wait for port detection
     await page.waitForTimeout(8000);
 
-    // Get port from UI
+    // Get port and PID from UI
     let bodyText = await page.textContent('body');
     const portMatch = bodyText.match(/localhost:(\d+)/);
     const detectedPort = parseInt(portMatch![1], 10);
     console.log(`[TEST] Detected port: ${detectedPort}`);
 
+    // Get PID from apps.json
+    const appsJsonPath = path.join(os.homedir(), '.uvdash', 'apps.json');
+    let content = fs.readFileSync(appsJsonPath, 'utf-8');
+    let appsData = JSON.parse(content);
+    const appId = Object.keys(appsData)[0];
+    const pidBeforeRestart = appsData[appId].pid;
+    console.log(`[TEST] PID before restart: ${pidBeforeRestart}`);
+
     await page.screenshot({ path: 'test-results/port-6-before-restart.png', fullPage: true });
 
-    // Close and reopen Electron (simulates app restart)
+    // Close and reopen Electron (app process should continue running)
     console.log('[TEST] Closing Electron...');
     await electronApp.close();
-    console.log('[TEST] Electron closed, waiting 5 seconds...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log('[TEST] Electron closed, waiting 3 seconds...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     // Relaunch
-    console.log('[TEST] Relaunching Electron (timeout: 120s)...');
+    console.log('[TEST] Relaunching Electron...');
     electronApp = await electron.launch({
       args: [path.join(__dirname, '../dist/main/index.js')],
-      timeout: 120000, // Increase timeout to 2 minutes for CI environments
+      timeout: 60000,
     });
 
     // Capture console output for relaunched instance
@@ -299,23 +307,35 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
 
     await page.screenshot({ path: 'test-results/port-7-after-restart.png', fullPage: true });
 
-    // After restart, running apps should be set to "installed"
-    // Port is cleared on restart since apps are no longer running
+    // NEW BEHAVIOR: App should be recovered as 'Running'
+    // Process survived the restart, so port/pid are preserved
     bodyText = await page.textContent('body');
     expect(bodyText).toContain('flask-test-app');
-    expect(bodyText).toContain('Ready'); // Should be in Ready state, not Running
+    expect(bodyText).toContain('Running'); // Should be recovered as Running
 
-    // UI should NOT show port (app is not running)
-    expect(bodyText).not.toMatch(/localhost:\d+/);
+    // UI SHOULD show port (app was recovered)
+    expect(bodyText).toMatch(/localhost:\d+/);
+    const recoveredPortMatch = bodyText.match(/localhost:(\d+)/);
+    expect(recoveredPortMatch).toBeTruthy();
+    const recoveredPort = parseInt(recoveredPortMatch![1], 10);
+    expect(recoveredPort).toBe(detectedPort); // Same port
 
-    // Verify in apps.json - port should be cleared on restart
-    const appsJsonPath = path.join(os.homedir(), '.uvdash', 'apps.json');
-    const content = fs.readFileSync(appsJsonPath, 'utf-8');
-    const appsData = JSON.parse(content);
-    const appId = Object.keys(appsData)[0];
+    // Verify in apps.json - port/pid should be preserved
+    content = fs.readFileSync(appsJsonPath, 'utf-8');
+    appsData = JSON.parse(content);
     const app = appsData[appId];
 
-    // Note: Port is cleared on restart since runtime state (pid/port) is not persisted
-    expect(app.port).toBeUndefined();
+    // Port and PID are preserved through restart
+    expect(app.port).toBe(detectedPort);
+    expect(app.pid).toBe(pidBeforeRestart);
+    console.log(`[TEST] Successfully recovered app with port ${app.port} and PID ${app.pid}`);
+
+    // Clean up: Stop the recovered app before test ends
+    console.log('[TEST] Stopping recovered app...');
+    const recoveredFlaskCard = page.locator('h3:has-text("flask-test-app")').locator('..').locator('..').locator('..');
+    const stopButton = recoveredFlaskCard.locator('button:has-text("Stop")');
+    await stopButton.click();
+    await page.waitForTimeout(2000);
+    console.log('[TEST] App stopped');
   });
 });

@@ -3,7 +3,7 @@ import * as path from 'path';
 import type { AppInfo, InstallRequest, GlobalSecret } from '../shared/types';
 import { checkUv, installUv } from './uv/manager';
 import { installApp } from './apps/installer';
-import { runApp as runAppProcess, stopApp as stopAppProcess, isRunning, getAppHealth, getAllAppHealth } from './apps/runner';
+import { runApp as runAppProcess, stopApp as stopAppProcess, isRunning, getAppHealth, getAllAppHealth, recoverProcess } from './apps/runner';
 import { loadApps, saveApps } from './storage/persistence';
 import { randomBytes } from 'crypto';
 import {
@@ -65,25 +65,70 @@ function createWindow() {
 }
 
 // Create window when the app is ready
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Initialize global secrets
   initGlobalSecrets();
 
-  // Load persisted app information
+  // Load persisted app information and attempt to recover running processes
   const persistedApps = loadApps();
+  const { isProcessAlive, isPortInUse } = await import('./apps/process-monitor');
+
   for (const [id, appInfo] of persistedApps.entries()) {
-    // On app startup, all apps should be in stopped state
-    // Clear runtime state (pid/port) since processes don't survive app restart
+    // Attempt to recover running processes
+    const hasPid = appInfo.pid !== undefined;
+    const hasPort = appInfo.port !== undefined;
+
+    if (hasPid && hasPort) {
+      // Check if both PID and port are still valid
+      const pidAlive = isProcessAlive(appInfo.pid!);
+      const portInUse = await isPortInUse(appInfo.port!);
+
+      if (pidAlive && portInUse) {
+        // Process is still running! Recover it
+        console.log(`[startup] Recovering running app ${id} (PID: ${appInfo.pid}, Port: ${appInfo.port})`);
+
+        // Register process with runner so Stop button works
+        recoverProcess(
+          id,
+          appInfo.pid!,
+          appInfo.installPath!,
+          (message) => sendLog(id, message),
+          () => {
+            // Callback when recovered process stops
+            const currentApp = apps.get(id);
+            if (currentApp) {
+              const stoppedApp = {
+                ...currentApp,
+                status: 'installed' as const,
+                pid: undefined,
+                port: undefined,
+              };
+              apps.set(id, stoppedApp);
+              sendAppUpdated(stoppedApp);
+              saveApps(apps);
+              sendLog(id, i18n.t('apps:process.stopped'), 'info');
+            }
+          }
+        );
+
+        apps.set(id, {
+          ...appInfo,
+          status: 'running',
+        });
+        continue;
+      }
+    }
+
+    // Otherwise, clear runtime state
     apps.set(id, {
       ...appInfo,
       status: appInfo.status === 'running' ? 'installed' : appInfo.status,
-      pid: undefined, // PID is always runtime-only
-      port: undefined, // Port is cleared on restart (processes are stopped)
+      pid: undefined,
+      port: undefined,
     });
   }
 
-  // Persist the cleaned state back to file
-  // (in case apps.json had runtime state from previous session)
+  // Persist the cleaned/recovered state back to file
   saveApps(apps);
 
   createWindow();
@@ -103,9 +148,9 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Note: We intentionally don't clean up running processes on quit.
-// Child processes will be terminated by the OS when the parent (Electron) exits.
-// State cleanup happens on next startup (Line 87: saveApps after clearing runtime state).
+// Note: Child processes (uv/python) are NOT terminated when uv-dash exits.
+// They continue running in the background, allowing users to restart uv-dash
+// and reconnect to running applications. Process recovery happens on startup.
 
 // IPC handlers
 ipcMain.handle('list-apps', async () => {

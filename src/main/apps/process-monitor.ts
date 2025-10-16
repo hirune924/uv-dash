@@ -1,4 +1,5 @@
 import { ChildProcess } from 'child_process';
+import * as net from 'net';
 import pidusage from 'pidusage';
 
 export interface ProcessHealth {
@@ -22,6 +23,33 @@ export function isProcessAlive(pid: number): boolean {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * Check if a port is currently in use (listening)
+ * @param port - Port number to check
+ * @returns Promise<boolean> - true if port is in use
+ */
+export async function isPortInUse(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(true); // Port is in use
+      } else {
+        resolve(false); // Other error, assume not in use
+      }
+    });
+
+    server.once('listening', () => {
+      server.close();
+      resolve(false); // Port is available
+    });
+
+    // Bind to 0.0.0.0 to check all interfaces (Flask binds to 0.0.0.0)
+    server.listen(port, '0.0.0.0');
+  });
 }
 
 /**

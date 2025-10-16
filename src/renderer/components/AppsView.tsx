@@ -286,14 +286,20 @@ export function AppCard({ app, onUpdate }: AppCardProps) {
               )}
             </div>
           )}
-          {health && app.status === 'running' && (
+          {app.status === 'running' && app.pid && (
             <div className="flex items-center gap-2 pt-1 border-t border-border-focus/30 mt-1">
               <span className="text-text-secondary">Process:</span>
               <span className="text-[11px]">
-                PID {health.pid} •{' '}
-                {health.status === 'running' && <span className="text-status-running">✓ Alive</span>}
-                {health.status === 'zombie' && <span className="text-status-error">⚠ Zombie</span>}
-                {health.status === 'unknown' && <span className="text-status-installing">? Unknown</span>}
+                PID {app.pid} •{' '}
+                {health ? (
+                  <>
+                    {health.status === 'running' && <span className="text-status-running">✓ Alive</span>}
+                    {health.status === 'zombie' && <span className="text-status-error">⚠ Zombie</span>}
+                    {health.status === 'unknown' && <span className="text-status-installing">? Unknown</span>}
+                  </>
+                ) : (
+                  <span className="text-text-tertiary">...</span>
+                )}
               </span>
             </div>
           )}
