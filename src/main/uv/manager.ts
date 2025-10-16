@@ -86,14 +86,28 @@ export async function installUv(
 
     onProgress?.('Running installation script...');
 
-    await execAsync(installScript, {
-      env: {
-        ...process.env,
-        UV_INSTALL_DIR: uvDir,
-      },
-    });
+    try {
+      const result = await execAsync(installScript, {
+        timeout: 90000, // 90 second timeout
+        env: {
+          ...process.env,
+          UV_INSTALL_DIR: uvDir,
+        },
+      });
 
-    onProgress?.('uv installation completed');
+      // Log stdout and stderr for debugging
+      if (result.stdout) {
+        onProgress?.(`stdout: ${result.stdout.substring(0, 200)}`);
+      }
+      if (result.stderr) {
+        onProgress?.(`stderr: ${result.stderr.substring(0, 200)}`);
+      }
+
+      onProgress?.('uv installation completed');
+    } catch (execError) {
+      onProgress?.(`Installation script error: ${execError instanceof Error ? execError.message : String(execError)}`);
+      throw execError;
+    }
 
     // Verify installation
     const check = await checkUv();

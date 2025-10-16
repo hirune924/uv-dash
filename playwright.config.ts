@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: /.*\.spec\.ts$/, // Match normal .spec.ts files
+  testIgnore: /.*\.ci\.spec\.ts$/, // Exclude CI-only tests from normal test runs
   timeout: 120000, // 120 seconds - increased for larger test suites with multiple apps
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

@@ -26,9 +26,10 @@ jobs:
         run: yarn build
 
       - name: Test UV installation flow (before installing uv)
-        run: yarn test:uv
+        run: yarn playwright test uv-installation.ci.spec.ts
         env:
           CI: true
+          NODE_ENV: test
 
       - name: Install uv
         run: |
@@ -78,9 +79,10 @@ jobs:
 
       - name: Test UV installation flow (before installing uv)
         shell: pwsh
-        run: yarn test:uv
+        run: yarn playwright test uv-installation.ci.spec.ts
         env:
           CI: true
+          NODE_ENV: test
           ELECTRON_DISABLE_SANDBOX: 1
 
       - name: Install uv
@@ -147,9 +149,10 @@ jobs:
         run: yarn build
 
       - name: Test UV installation flow (before installing uv)
-        run: yarn test:uv
+        run: yarn playwright test uv-installation.ci.spec.ts
         env:
           CI: true
+          NODE_ENV: test
 
       - name: Install uv
         run: |
