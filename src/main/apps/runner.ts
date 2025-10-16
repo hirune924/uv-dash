@@ -74,6 +74,7 @@ interface ProcessInfo {
   appId: string;
   installPath: string;
   onProcessStopped?: () => void;
+  logPollInterval?: NodeJS.Timeout;
 }
 
 /**
@@ -117,6 +118,21 @@ function getUvCommand(): string {
 
   // Otherwise use system PATH uv
   return 'uv';
+}
+
+/**
+ * Get logs directory path
+ */
+function getLogsDir(): string {
+  const homeDir = os.homedir();
+  const logsDir = path.join(homeDir, '.uvdash', 'logs');
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+
+  return logsDir;
 }
 
 /**
@@ -186,6 +202,76 @@ function stopHealthPolling(appId: string): void {
 }
 
 /**
+ * Start log file polling for real-time log display and port detection
+ */
+function startLogPolling(
+  appId: string,
+  logFilePath: string,
+  onLog: (message: string) => void,
+  onPortDetected?: (port: number) => void
+): NodeJS.Timeout {
+  let lastPosition = 0;
+
+  const pollInterval = setInterval(() => {
+    try {
+      if (!fs.existsSync(logFilePath)) {
+        return;
+      }
+
+      const stats = fs.statSync(logFilePath);
+      if (stats.size > lastPosition) {
+        const stream = fs.createReadStream(logFilePath, {
+          start: lastPosition,
+          end: stats.size,
+          encoding: 'utf-8',
+        });
+
+        let buffer = '';
+        stream.on('data', (chunk: string) => {
+          buffer += chunk;
+          const lines = buffer.split('\n');
+          // Keep the last incomplete line in buffer
+          buffer = lines.pop() || '';
+
+          lines.forEach((line) => {
+            if (line.trim()) {
+              onLog(line);
+
+              // Detect port from log
+              if (onPortDetected) {
+                const port = detectPortFromLog(line);
+                if (port) {
+                  onPortDetected(port);
+                }
+              }
+            }
+          });
+        });
+
+        stream.on('end', () => {
+          lastPosition = stats.size;
+        });
+      }
+    } catch (error) {
+      // Silently ignore errors (e.g., file being written to)
+    }
+  }, 1000); // Poll every 1 second
+
+  return pollInterval;
+}
+
+/**
+ * Stop log file polling
+ */
+function stopLogPolling(appId: string): void {
+  const processInfo = runningProcesses.get(appId);
+  if (processInfo?.logPollInterval) {
+    clearInterval(processInfo.logPollInterval);
+    processInfo.logPollInterval = undefined;
+  }
+}
+
+/**
  * Set up process event handlers (common processing)
  * Works for both normal ChildProcess and RecoveredProcessHandle
  * @param proc - Target ChildProcess or RecoveredProcessHandle
@@ -193,6 +279,7 @@ function stopHealthPolling(appId: string): void {
  * @param onLog - Log callback
  * @param onPortDetected - Callback when port is detected (optional)
  * @param onProcessStopped - Callback when process is stopped (optional)
+ * @param logFilePath - Path to log file for polling (optional, for new processes)
  * @returns { success: boolean; pid?: number }
  */
 function setupProcessHandlers(
@@ -200,40 +287,20 @@ function setupProcessHandlers(
   appId: string,
   onLog: (message: string) => void,
   onPortDetected?: (port: number) => void,
-  onProcessStopped?: () => void
+  onProcessStopped?: () => void,
+  logFilePath?: string
 ): { success: boolean; pid?: number } {
-  // Stream stdout to log + detect port (only for real ChildProcess)
-  proc.stdout?.on('data', (data) => {
-    const message = data.toString();
-    onLog(message);
-
-    // Detect port number
-    if (onPortDetected) {
-      const port = detectPortFromLog(message);
-      if (port) {
-        onPortDetected(port);
-      }
-    }
-  });
-
-  proc.stderr?.on('data', (data) => {
-    const message = data.toString();
-    onLog(message);
-
-    // Also detect port from stderr (Flask etc. output to stderr)
-    if (onPortDetected) {
-      const port = detectPortFromLog(message);
-      if (port) {
-        onPortDetected(port);
-      }
-    }
-  });
+  // Note: We no longer use proc.stdout/stderr.on('data') because logs are redirected to file
+  // Instead, we poll the log file for real-time updates
+  // This works with detached: true on all platforms including Windows
 
   proc.on('error', (error) => {
     onLog(`[ERROR] Process error: ${error.message}`);
     onLog(`[ERROR] Error name: ${error.name}`);
     onLog(`[ERROR] Error stack: ${error.stack || 'N/A'}`);
     onLog(i18n.t('apps:error.process', { error: error.message }));
+
+    const processInfo = runningProcesses.get(appId);
     runningProcesses.delete(appId);
 
     // Clear timeout if set
@@ -245,6 +312,7 @@ function setupProcessHandlers(
 
     // Stop polling
     stopHealthPolling(appId);
+    stopLogPolling(appId);
 
     // Stop watching if this is a RecoveredProcessHandle
     if (proc instanceof RecoveredProcessHandle) {
@@ -259,6 +327,8 @@ function setupProcessHandlers(
   proc.on('close', (code, signal) => {
     onLog(`[DEBUG] Process closed with code: ${code}, signal: ${signal || 'none'}`);
     onLog(i18n.t('apps:process.exited', { code }));
+
+    const processInfo = runningProcesses.get(appId);
     runningProcesses.delete(appId);
 
     // Clear timeout if set
@@ -270,6 +340,7 @@ function setupProcessHandlers(
 
     // Stop polling
     stopHealthPolling(appId);
+    stopLogPolling(appId);
 
     // Stop watching if this is a RecoveredProcessHandle
     if (proc instanceof RecoveredProcessHandle) {
@@ -290,6 +361,12 @@ function setupProcessHandlers(
     onProcessStopped,
   };
   runningProcesses.set(appId, processInfo);
+
+  // Start log file polling if log file path is provided (for new processes)
+  if (logFilePath) {
+    const logPollInterval = startLogPolling(appId, logFilePath, onLog, onPortDetected);
+    processInfo.logPollInterval = logPollInterval;
+  }
 
   // Start health check polling
   startHealthPolling(appId, onLog, onProcessStopped);
@@ -490,9 +567,14 @@ export async function runApp(
         onLog(`[DEBUG] Full command: ${fullCommand}`);
         onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
+        // Create log file for this app
+        const logsDir = getLogsDir();
+        const logFile = path.join(logsDir, `${appId}.log`);
+        const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
-          stdio: ['ignore', 'pipe', 'pipe'],
+          stdio: ['ignore', logFd, logFd], // Use file descriptor
           detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
@@ -501,8 +583,15 @@ export async function runApp(
         });
 
         onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
+        onLog(`[DEBUG] Log file: ${logFile}`);
+
+        // Close our file descriptor (child process has its own copy)
+        fs.close(logFd, (err) => {
+          if (err) console.error('[runner] Failed to close log fd:', err);
+        });
+
         // Common post-processing for proc
-        return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
+        return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped, logFile);
       } else {
         // Other uv subcommands (uv sync etc.) use as-is
         onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
@@ -513,9 +602,14 @@ export async function runApp(
         onLog(`[DEBUG] Full command: ${fullCommand}`);
         onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
+        // Create log file for this app
+        const logsDir = getLogsDir();
+        const logFile = path.join(logsDir, `${appId}.log`);
+        const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
-          stdio: ['ignore', 'pipe', 'pipe'],
+          stdio: ['ignore', logFd, logFd], // Use file descriptor
           detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
@@ -524,7 +618,14 @@ export async function runApp(
         });
 
         onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
-        return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
+        onLog(`[DEBUG] Log file: ${logFile}`);
+
+        // Close our file descriptor (child process has its own copy)
+        fs.close(logFd, (err) => {
+          if (err) console.error('[runner] Failed to close log fd:', err);
+        });
+
+        return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped, logFile);
       }
     } else {
       onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
@@ -538,10 +639,15 @@ export async function runApp(
     onLog(`[DEBUG] Full command: ${fullCommand}`);
     onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
+    // Create log file for this app
+    const logsDir = getLogsDir();
+    const logFile = path.join(logsDir, `${appId}.log`);
+    const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+
     // Execute command with uv run
     const proc = spawn(uvCmd, ['run', ...commandArgs], {
       cwd: installPath,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', logFd, logFd], // Use file descriptor
       detached: true, // Detach from parent so process survives Electron restart
       env: {
         ...process.env,
@@ -551,8 +657,14 @@ export async function runApp(
 
     // Log spawn result
     onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
+    onLog(`[DEBUG] Log file: ${logFile}`);
 
-    return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped);
+    // Close our file descriptor (child process has its own copy)
+    fs.close(logFd, (err) => {
+      if (err) console.error('[runner] Failed to close log fd:', err);
+    });
+
+    return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped, logFile);
   } catch (error) {
     return {
       success: false,
@@ -682,11 +794,38 @@ export function recoverProcess(
   onLog: (message: string) => void,
   onProcessStopped?: () => void
 ): void {
+  // Load existing logs from file if available
+  const logsDir = getLogsDir();
+  const logFile = path.join(logsDir, `${appId}.log`);
+
+  if (fs.existsSync(logFile)) {
+    try {
+      onLog('[Recovery] Loading previous logs from file...');
+      const existingLogs = fs.readFileSync(logFile, 'utf-8');
+      const lines = existingLogs.split('\n');
+
+      // Send existing logs to UI
+      lines.forEach((line) => {
+        if (line.trim()) {
+          onLog(line);
+        }
+      });
+
+      onLog('[Recovery] Previous logs loaded successfully');
+      onLog('[Recovery] Note: New logs after recovery will not be captured (stdio disconnected)');
+    } catch (error) {
+      onLog(`[Recovery] Warning: Failed to load previous logs: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  } else {
+    onLog('[Recovery] No previous log file found');
+  }
+
   // Create EventEmitter-based mock that can emit 'close' events
   const recoveredHandle = new RecoveredProcessHandle(pid);
 
   // Use the same setupProcessHandlers as normal processes
   // This ensures uniform event-driven cleanup for both normal and recovered processes
+  // Note: logFilePath is not provided because we can't capture new logs from recovered processes
   setupProcessHandlers(recoveredHandle, appId, onLog, undefined, onProcessStopped);
 
   console.log(`[runner] Recovered process for app ${appId} with PID ${pid}`);
