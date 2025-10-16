@@ -1,4 +1,5 @@
 import { spawn, ChildProcess } from 'child_process';
+import { EventEmitter } from 'events';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -9,10 +10,66 @@ import { isProcessAlive, getProcessHealth, ProcessHealth } from './process-monit
 import i18n from '../i18n';
 
 /**
+ * EventEmitter-based mock ChildProcess for recovered processes
+ * Allows recovered processes to use the same event-driven cleanup as normal processes
+ */
+class RecoveredProcessHandle extends EventEmitter {
+  public readonly pid: number;
+  public readonly stdout = null;
+  public readonly stderr = null;
+  public readonly stdin = null;
+  private watchInterval?: NodeJS.Timeout;
+
+  constructor(pid: number) {
+    super();
+    this.pid = pid;
+  }
+
+  /**
+   * Start monitoring process existence and emit 'close' when it terminates
+   */
+  startWatch(intervalMs: number = 300): void {
+    if (this.watchInterval) {
+      return; // Already watching
+    }
+
+    this.watchInterval = setInterval(() => {
+      if (!isProcessAlive(this.pid)) {
+        this.stopWatch();
+        // Emit close event (code/signal unknown for recovered processes)
+        this.emit('close', null, null);
+      }
+    }, intervalMs);
+  }
+
+  /**
+   * Stop monitoring
+   */
+  stopWatch(): void {
+    if (this.watchInterval) {
+      clearInterval(this.watchInterval);
+      this.watchInterval = undefined;
+    }
+  }
+
+  /**
+   * Kill the process (delegates to tree-kill for proper tree termination)
+   */
+  kill(signal?: NodeJS.Signals | number): boolean {
+    try {
+      process.kill(this.pid, signal as NodeJS.Signals);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+/**
  * Process execution information
  */
 interface ProcessInfo {
-  process: ChildProcess;
+  process: ChildProcess | RecoveredProcessHandle;
   startTime: number;
   appId: string;
   installPath: string;
@@ -130,7 +187,8 @@ function stopHealthPolling(appId: string): void {
 
 /**
  * Set up process event handlers (common processing)
- * @param proc - Target ChildProcess
+ * Works for both normal ChildProcess and RecoveredProcessHandle
+ * @param proc - Target ChildProcess or RecoveredProcessHandle
  * @param appId - Application ID
  * @param onLog - Log callback
  * @param onPortDetected - Callback when port is detected (optional)
@@ -138,13 +196,13 @@ function stopHealthPolling(appId: string): void {
  * @returns { success: boolean; pid?: number }
  */
 function setupProcessHandlers(
-  proc: ChildProcess,
+  proc: ChildProcess | RecoveredProcessHandle,
   appId: string,
   onLog: (message: string) => void,
   onPortDetected?: (port: number) => void,
   onProcessStopped?: () => void
 ): { success: boolean; pid?: number } {
-  // Stream stdout to log + detect port
+  // Stream stdout to log + detect port (only for real ChildProcess)
   proc.stdout?.on('data', (data) => {
     const message = data.toString();
     onLog(message);
@@ -188,6 +246,11 @@ function setupProcessHandlers(
     // Stop polling
     stopHealthPolling(appId);
 
+    // Stop watching if this is a RecoveredProcessHandle
+    if (proc instanceof RecoveredProcessHandle) {
+      proc.stopWatch();
+    }
+
     if (onProcessStopped) {
       onProcessStopped();
     }
@@ -208,6 +271,11 @@ function setupProcessHandlers(
     // Stop polling
     stopHealthPolling(appId);
 
+    // Stop watching if this is a RecoveredProcessHandle
+    if (proc instanceof RecoveredProcessHandle) {
+      proc.stopWatch();
+    }
+
     if (onProcessStopped) {
       onProcessStopped();
     }
@@ -225,6 +293,11 @@ function setupProcessHandlers(
 
   // Start health check polling
   startHealthPolling(appId, onLog, onProcessStopped);
+
+  // Start watching for process termination (RecoveredProcessHandle only)
+  if (proc instanceof RecoveredProcessHandle) {
+    proc.startWatch();
+  }
 
   onLog(i18n.t('apps:process.started', { pid: proc.pid }));
 
@@ -508,21 +581,13 @@ export async function stopApp(
     return { success: false, error: i18n.t('apps:error.no_pid') };
   }
 
-  // Check if this is a recovered process (mock ChildProcess)
-  // Recovered processes don't have real stdout/stderr
-  const isRecoveredProcess = !proc.stdout && !proc.stderr;
-
   // Prevent duplicate execution if already stopping
   if (stoppingProcesses.has(appId)) {
     return { success: false, error: i18n.t('apps:error.already_stopping') };
   }
 
-  // Stop health check polling BEFORE removing from map
+  // Stop health check polling
   stopHealthPolling(appId);
-
-  // Immediately remove from runningProcesses to prevent health check race conditions
-  // This prevents zombie detection while process is shutting down
-  runningProcesses.delete(appId);
 
   try {
     onLog(i18n.t('apps:process.stopping'));
@@ -545,17 +610,6 @@ export async function stopApp(
       });
 
       onLog(i18n.t('apps:process.stop_requested'));
-
-      // For recovered processes, manually clean up since no close event will fire
-      if (isRecoveredProcess) {
-        onLog(i18n.t('apps:process.stopped'));
-        runningProcesses.delete(appId);
-        // Call the callback to update UI
-        if (processInfo.onProcessStopped) {
-          processInfo.onProcessStopped();
-        }
-      }
-
       return { success: true };
     }
 
@@ -585,16 +639,6 @@ export async function stopApp(
           }
           // Remove timeout record (fallback if not removed by close event)
           stoppingProcesses.delete(appId);
-
-          // For recovered processes, manually clean up
-          if (isRecoveredProcess) {
-            onLog(i18n.t('apps:process.stopped'));
-            runningProcesses.delete(appId);
-            // Call the callback to update UI
-            if (processInfo.onProcessStopped) {
-              processInfo.onProcessStopped();
-            }
-          }
         });
       } else {
         // If process already terminated, just clean up
@@ -602,16 +646,6 @@ export async function stopApp(
           onLog(`[DEBUG] Process ${proc.pid} already terminated, skipping SIGKILL`);
         }
         stoppingProcesses.delete(appId);
-
-        // For recovered processes, manually clean up since no close event
-        if (isRecoveredProcess) {
-          onLog(i18n.t('apps:process.stopped'));
-          runningProcesses.delete(appId);
-          // Call the callback to update UI
-          if (processInfo.onProcessStopped) {
-            processInfo.onProcessStopped();
-          }
-        }
       }
     }, PROCESS.SIGKILL_TIMEOUT_MS);
 
@@ -631,7 +665,7 @@ export async function stopApp(
 
 /**
  * Recover a process that survived application restart
- * Creates a mock ChildProcess wrapper to enable stopping the process
+ * Creates an EventEmitter-based mock to enable event-driven process management
  * @param appId - Application ID
  * @param pid - Process ID
  * @param installPath - Installation path
@@ -645,41 +679,12 @@ export function recoverProcess(
   onLog: (message: string) => void,
   onProcessStopped?: () => void
 ): void {
-  // Create a mock ChildProcess-like object
-  // We can't fully recreate a ChildProcess, but we can create an object
-  // that has the minimum properties needed for stopping
-  const mockProcess = {
-    pid,
-    kill: (signal?: NodeJS.Signals | number) => {
-      // Use kill directly on the PID
-      try {
-        process.kill(pid, signal as NodeJS.Signals);
-        return true;
-      } catch (error) {
-        return false;
-      }
-    },
-    // Add stubs for event handlers (won't be called for recovered processes)
-    stdout: null,
-    stderr: null,
-    stdin: null,
-    on: () => mockProcess,
-    once: () => mockProcess,
-    removeListener: () => mockProcess,
-  } as unknown as ChildProcess;
+  // Create EventEmitter-based mock that can emit 'close' events
+  const recoveredHandle = new RecoveredProcessHandle(pid);
 
-  const processInfo: ProcessInfo = {
-    process: mockProcess,
-    startTime: Date.now(), // We don't know the actual start time, use current time
-    appId,
-    installPath,
-    onProcessStopped,
-  };
-
-  runningProcesses.set(appId, processInfo);
-
-  // Start health check polling for the recovered process
-  startHealthPolling(appId, onLog, onProcessStopped);
+  // Use the same setupProcessHandlers as normal processes
+  // This ensures uniform event-driven cleanup for both normal and recovered processes
+  setupProcessHandlers(recoveredHandle, appId, onLog, undefined, onProcessStopped);
 
   console.log(`[runner] Recovered process for app ${appId} with PID ${pid}`);
 }
