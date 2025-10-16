@@ -132,6 +132,20 @@ app.whenReady().then(async () => {
           appInfo.pid!,
           appInfo.installPath!,
           (message) => sendLog(id, message),
+          (port) => {
+            // Callback when port is detected from recovered process logs
+            const currentApp = apps.get(id);
+            if (currentApp) {
+              const updatedApp = {
+                ...currentApp,
+                port,
+              };
+              apps.set(id, updatedApp);
+              sendAppUpdated(updatedApp);
+              saveApps(apps);
+              sendLog(id, i18n.t('apps:process.port_detected', { port }), 'info');
+            }
+          },
           () => {
             // Callback when recovered process stops
             const currentApp = apps.get(id);

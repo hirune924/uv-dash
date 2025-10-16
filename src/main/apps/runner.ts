@@ -1,5 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
+import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -122,10 +123,11 @@ function getUvCommand(): string {
 
 /**
  * Get logs directory path
+ * Uses app.getPath('userData') to ensure consistency with --user-data-dir in tests
  */
 function getLogsDir(): string {
-  const homeDir = os.homedir();
-  const logsDir = path.join(homeDir, '.uvdash', 'logs');
+  const userDataPath = app.getPath('userData');
+  const logsDir = path.join(userDataPath, 'logs');
 
   // Create directory if it doesn't exist
   if (!fs.existsSync(logsDir)) {
@@ -578,6 +580,7 @@ export async function runApp(
           detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
+            PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
             ...env,
           },
         });
@@ -613,6 +616,7 @@ export async function runApp(
           detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
+            PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
             ...env,
           },
         });
@@ -651,6 +655,7 @@ export async function runApp(
       detached: true, // Detach from parent so process survives Electron restart
       env: {
         ...process.env,
+        PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
         ...env, // Add user-defined environment variables
       },
     });
@@ -781,10 +786,12 @@ export async function stopApp(
 /**
  * Recover a process that survived application restart
  * Creates an EventEmitter-based mock to enable event-driven process management
+ * Also continues tailing the log file for new output from the recovered process
  * @param appId - Application ID
  * @param pid - Process ID
  * @param installPath - Installation path
  * @param onLog - Log callback
+ * @param onPortDetected - Callback when port is detected (optional)
  * @param onProcessStopped - Callback when process is stopped
  */
 export function recoverProcess(
@@ -792,6 +799,7 @@ export function recoverProcess(
   pid: number,
   installPath: string,
   onLog: (message: string) => void,
+  onPortDetected?: (port: number) => void,
   onProcessStopped?: () => void
 ): void {
   // Load existing logs from file if available
@@ -812,7 +820,6 @@ export function recoverProcess(
       });
 
       onLog('[Recovery] Previous logs loaded successfully');
-      onLog('[Recovery] Note: New logs after recovery will not be captured (stdio disconnected)');
     } catch (error) {
       onLog(`[Recovery] Warning: Failed to load previous logs: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -825,8 +832,8 @@ export function recoverProcess(
 
   // Use the same setupProcessHandlers as normal processes
   // This ensures uniform event-driven cleanup for both normal and recovered processes
-  // Note: logFilePath is not provided because we can't capture new logs from recovered processes
-  setupProcessHandlers(recoveredHandle, appId, onLog, undefined, onProcessStopped);
+  // Pass logFilePath to continue tailing the log file for new output
+  setupProcessHandlers(recoveredHandle, appId, onLog, onPortDetected, onProcessStopped, logFile);
 
   console.log(`[runner] Recovered process for app ${appId} with PID ${pid}`);
 }
