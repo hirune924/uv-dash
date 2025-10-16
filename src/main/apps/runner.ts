@@ -512,13 +512,17 @@ export async function stopApp(
   // Recovered processes don't have real stdout/stderr
   const isRecoveredProcess = !proc.stdout && !proc.stderr;
 
-  // Stop health check polling
-  stopHealthPolling(appId);
-
   // Prevent duplicate execution if already stopping
   if (stoppingProcesses.has(appId)) {
     return { success: false, error: i18n.t('apps:error.already_stopping') };
   }
+
+  // Stop health check polling BEFORE removing from map
+  stopHealthPolling(appId);
+
+  // Immediately remove from runningProcesses to prevent health check race conditions
+  // This prevents zombie detection while process is shutting down
+  runningProcesses.delete(appId);
 
   try {
     onLog(i18n.t('apps:process.stopping'));
