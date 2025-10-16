@@ -12,11 +12,14 @@ const testEnv = new TestEnvironment();
 const FLASK_APP_PATH = path.join(__dirname, '../test-fixtures/flask-test-app');
 const FLASK_RUN_COMMAND = 'python app.py';
 
+// Parse extra launch arguments from environment variable (for CI stability)
+const extraArgs = process.env.ELECTRON_EXTRA_LAUNCH_ARGS?.split(' ').filter(arg => arg.length > 0) || [];
+
 test.describe.serial('Port Persistence and Lifecycle', () => {
   test.beforeAll(async () => {
     testEnv.setup();
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '../dist/main/index.js')],
+      args: [path.join(__dirname, '../dist/main/index.js'), ...extraArgs],
       timeout: 60000,
     });
 
@@ -291,7 +294,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     // Relaunch
     console.log('[TEST] Relaunching Electron...');
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '../dist/main/index.js')],
+      args: [path.join(__dirname, '../dist/main/index.js'), ...extraArgs],
       timeout: 60000,
     });
 

@@ -71,6 +71,34 @@ jobs:
           uv --version
         shell: powershell
 
+      - name: Set CI environment flags
+        shell: pwsh
+        run: |
+          echo "ELECTRON_NO_ATTACH_CONSOLE=1" | Out-File -Append -FilePath $env:GITHUB_ENV
+          echo "NODE_OPTIONS=--max-old-space-size=4096" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Create unique user-data directory
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "e2e-profile\$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          echo "E2E_USER_DATA_DIR=$dir" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Pre-clean previous Electron processes
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force
+          $p = "$env:E2E_USER_DATA_DIR"
+          Remove-Item -Force -ErrorAction SilentlyContinue `
+            (Join-Path $p 'SingletonLock'), `
+            (Join-Path $p 'SingletonCookie'), `
+            (Join-Path $p 'SingletonSocket')
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `
+            (Join-Path $p 'GPUCache'), `
+            (Join-Path $p 'Code Cache'), `
+            (Join-Path $p 'Service Worker')
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
@@ -78,9 +106,11 @@ jobs:
         run: yarn build
 
       - name: Run tests
+        shell: pwsh
         run: yarn test
         env:
           ELECTRON_DISABLE_SANDBOX: 1
+          ELECTRON_EXTRA_LAUNCH_ARGS: "--user-data-dir=${{ env.E2E_USER_DATA_DIR }} --disable-gpu"
 
       - name: Upload test results
         if: always()
@@ -113,19 +143,48 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           uv --version
 
-      - name: Install dependencies
+      - name: Install runtime dependencies
         run: |
-          yarn install --frozen-lockfile
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb dbus-x11 libnss3 libasound2 \
+            libxkbcommon0 libxrandr2 libgbm1 libgtk-3-0 \
+            fonts-liberation fonts-noto-color-emoji
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 -ac +render +extension RANDR +extension GLX -noreset &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set CI environment flags
+        run: |
+          echo "ELECTRON_DISABLE_SANDBOX=1" >> $GITHUB_ENV
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> $GITHUB_ENV
+          echo "NODE_OPTIONS=--max-old-space-size=4096" >> $GITHUB_ENV
+
+      - name: Create unique user-data directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/e2e-profile"
+          echo "E2E_USER_DATA_DIR=$RUNNER_TEMP/e2e-profile/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV
+
+      - name: Pre-clean chromium locks and cache
+        run: |
+          rm -f "$E2E_USER_DATA_DIR/SingletonLock" \
+                "$E2E_USER_DATA_DIR/SingletonCookie" \
+                "$E2E_USER_DATA_DIR/SingletonSocket" || true
+          rm -rf "$E2E_USER_DATA_DIR/GPUCache" \
+                 "$E2E_USER_DATA_DIR/Code Cache" \
+                 "$E2E_USER_DATA_DIR/Service Worker" || true
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Build application
         run: yarn build
 
       - name: Run tests
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" yarn test
+        run: yarn test
         env:
-          ELECTRON_DISABLE_SANDBOX: 1
+          ELECTRON_EXTRA_LAUNCH_ARGS: "--user-data-dir=${{ env.E2E_USER_DATA_DIR }} --disable-gpu --disable-dev-shm-usage"
 
       - name: Upload test results
         if: always()
