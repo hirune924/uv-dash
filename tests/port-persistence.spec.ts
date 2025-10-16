@@ -12,6 +12,39 @@ const testEnv = new TestEnvironment();
 const FLASK_APP_PATH = path.join(__dirname, '../test-fixtures/flask-test-app');
 const FLASK_RUN_COMMAND = 'python app.py';
 
+/**
+ * Safely close Electron with timeout and force kill if needed
+ * Minimal version to handle CI environment issues
+ */
+async function closeElectronSafely(app: ElectronApplication) {
+  const pid = app.process().pid;
+  console.log(`[TEST] Closing Electron (PID: ${pid})`);
+
+  // Try normal close with 10s timeout
+  const closeResult = await Promise.race([
+    app.close().then(() => 'ok').catch((e) => {
+      console.log(`[TEST] close() error: ${e.message}`);
+      return 'error';
+    }),
+    new Promise(r => setTimeout(r, 10000)).then(() => 'timeout')
+  ]);
+
+  console.log(`[TEST] close() result: ${closeResult}`);
+
+  // If close failed or timed out, force kill the process
+  if (closeResult !== 'ok') {
+    console.log(`[TEST] Force killing PID ${pid}`);
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch (e) {
+      console.log(`[TEST] Kill failed:`, e);
+    }
+  }
+
+  // Wait for process to fully terminate
+  await new Promise(r => setTimeout(r, 2000));
+  console.log('[TEST] Electron close complete');
+}
 
 test.describe.serial('Port Persistence and Lifecycle', () => {
   test.beforeAll(async () => {
@@ -284,8 +317,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await page.screenshot({ path: 'test-results/port-6-before-restart.png', fullPage: true });
 
     // Close and reopen Electron (app process should continue running)
-    console.log('[TEST] Closing Electron...');
-    await electronApp.close();
+    await closeElectronSafely(electronApp);
 
     console.log('[TEST] Waiting 3 seconds before relaunch...');
     await new Promise(resolve => setTimeout(resolve, 3000));
