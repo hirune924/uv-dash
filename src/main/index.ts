@@ -70,6 +70,18 @@ function createWindow() {
   // Load renderer HTML
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 
+  // Send recovered app states after renderer is ready
+  mainWindow.webContents.once('did-finish-load', () => {
+    // Give renderer a moment to set up IPC listeners
+    setTimeout(() => {
+      for (const app of apps.values()) {
+        if (app.status === 'running') {
+          sendAppUpdated(app);
+        }
+      }
+    }, 100);
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -122,10 +134,12 @@ app.whenReady().then(async () => {
           }
         );
 
-        apps.set(id, {
+        const recoveredApp = {
           ...appInfo,
-          status: 'running',
-        });
+          status: 'running' as const,
+        };
+        apps.set(id, recoveredApp);
+        // Note: sendAppUpdated() will be called after window is created
         continue;
       }
     }
