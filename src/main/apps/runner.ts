@@ -493,6 +493,7 @@ export async function runApp(
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
           stdio: ['ignore', 'pipe', 'pipe'],
+          detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
             ...env,
@@ -515,6 +516,7 @@ export async function runApp(
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
           stdio: ['ignore', 'pipe', 'pipe'],
+          detached: true, // Detach from parent so process survives Electron restart
           env: {
             ...process.env,
             ...env,
@@ -540,6 +542,7 @@ export async function runApp(
     const proc = spawn(uvCmd, ['run', ...commandArgs], {
       cwd: installPath,
       stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true, // Detach from parent so process survives Electron restart
       env: {
         ...process.env,
         ...env, // Add user-defined environment variables
