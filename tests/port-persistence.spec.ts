@@ -255,7 +255,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
   });
 
   test('should recover running app after Electron restart', async () => {
-    test.setTimeout(180000); // 3 minutes for safety
+    test.setTimeout(120000); // 2 minutes
     console.log('[TEST] Starting Electron restart test with process survival');
 
     // Run the app

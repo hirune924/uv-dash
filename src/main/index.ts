@@ -15,21 +15,22 @@ import {
 } from './storage/secrets-storage';
 import i18n, { changeLanguage } from './i18n';
 
-// Parse command line arguments for --user-data-dir (for E2E testing)
-const args = process.argv.slice(1);
-const userDataDirIndex = args.findIndex(arg => arg.startsWith('--user-data-dir='));
-if (userDataDirIndex !== -1) {
-  const userDataDir = args[userDataDirIndex].split('=')[1];
-  if (userDataDir) {
-    console.log(`[startup] Setting userData path to: ${userDataDir}`);
-    app.setPath('userData', userDataDir);
-  }
-}
-
 let mainWindow: BrowserWindow | null = null;
 
 // Application list (temporarily held in memory)
 const apps: Map<string, AppInfo> = new Map();
+
+// Debounced saveApps to reduce disk I/O
+let saveAppsTimer: NodeJS.Timeout | null = null;
+function debouncedSaveApps() {
+  if (saveAppsTimer) {
+    clearTimeout(saveAppsTimer);
+  }
+  saveAppsTimer = setTimeout(() => {
+    saveApps(apps);
+    saveAppsTimer = null;
+  }, 1000);
+}
 
 // Log sending helper
 function sendLog(appId: string, message: string, level: 'info' | 'error' | 'warning' = 'info') {
@@ -55,6 +56,35 @@ function sendAppUpdated(app: AppInfo) {
   }
 }
 
+// Handle port detection for both normal and recovered processes
+function handlePortDetected(appId: string, port: number) {
+  const app = apps.get(appId);
+  if (app) {
+    const updatedApp = { ...app, port };
+    apps.set(appId, updatedApp);
+    sendAppUpdated(updatedApp);
+    debouncedSaveApps(); // Debounce to reduce disk I/O
+    sendLog(appId, i18n.t('apps:process.port_detected', { port }), 'info');
+  }
+}
+
+// Handle process stop for both normal and recovered processes
+function handleProcessStopped(appId: string) {
+  const app = apps.get(appId);
+  if (app) {
+    const stoppedApp = {
+      ...app,
+      status: 'installed' as const,
+      pid: undefined,
+      port: undefined,
+    };
+    apps.set(appId, stoppedApp);
+    sendAppUpdated(stoppedApp);
+    saveApps(apps); // Immediate save for important state changes
+    sendLog(appId, i18n.t('apps:process.stopped'), 'info');
+  }
+}
+
 // Create main window
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -69,18 +99,6 @@ function createWindow() {
 
   // Load renderer HTML
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-
-  // Send recovered app states after renderer is ready
-  mainWindow.webContents.once('did-finish-load', () => {
-    // Give renderer a moment to set up IPC listeners
-    setTimeout(() => {
-      for (const app of apps.values()) {
-        if (app.status === 'running') {
-          sendAppUpdated(app);
-        }
-      }
-    }, 100);
-  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -116,36 +134,8 @@ app.whenReady().then(async () => {
           appInfo.pid!,
           appInfo.installPath!,
           (message) => sendLog(id, message),
-          (port) => {
-            // Callback when port is detected from recovered process logs
-            const currentApp = apps.get(id);
-            if (currentApp) {
-              const updatedApp = {
-                ...currentApp,
-                port,
-              };
-              apps.set(id, updatedApp);
-              sendAppUpdated(updatedApp);
-              saveApps(apps);
-              sendLog(id, i18n.t('apps:process.port_detected', { port }), 'info');
-            }
-          },
-          () => {
-            // Callback when recovered process stops
-            const currentApp = apps.get(id);
-            if (currentApp) {
-              const stoppedApp = {
-                ...currentApp,
-                status: 'installed' as const,
-                pid: undefined,
-                port: undefined,
-              };
-              apps.set(id, stoppedApp);
-              sendAppUpdated(stoppedApp);
-              saveApps(apps);
-              sendLog(id, i18n.t('apps:process.stopped'), 'info');
-            }
-          }
+          (port) => handlePortDetected(id, port),
+          () => handleProcessStopped(id)
         );
 
         const recoveredApp = {
@@ -319,40 +309,10 @@ ipcMain.handle('run-app', async (_event, appId: string) => {
     appId,
     app.installPath!,
     app.runCommand,
-    mergedEnv, // Pass merged environment variables and decrypted secrets
-    (message) => {
-      sendLog(appId, message);
-    },
-    (port) => {
-      // Callback when port is detected
-      const currentApp = apps.get(appId);
-      if (currentApp) {
-        const updatedApp = {
-          ...currentApp,
-          port,
-        };
-        apps.set(appId, updatedApp);
-        sendAppUpdated(updatedApp); // 7. In port detection callback
-        saveApps(apps); // Persist port information
-        sendLog(appId, i18n.t('apps:process.port_detected', { port }), 'info');
-      }
-    },
-    () => {
-      // Callback when process is stopped
-      const currentApp = apps.get(appId);
-      if (currentApp) {
-        const stoppedApp = {
-          ...currentApp,
-          status: 'installed' as const,
-          pid: undefined,
-          port: undefined,
-        };
-        apps.set(appId, stoppedApp);
-        sendAppUpdated(stoppedApp); // 8. In process stopped callback
-        saveApps(apps); // Persist status update
-        sendLog(appId, i18n.t('apps:process.stopped'), 'info');
-      }
-    }
+    mergedEnv,
+    (message) => sendLog(appId, message),
+    (port) => handlePortDetected(appId, port),
+    () => handleProcessStopped(appId)
   );
 
   if (result.success) {
