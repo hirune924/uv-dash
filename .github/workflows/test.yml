@@ -30,6 +30,7 @@ jobs:
         env:
           CI: true
           NODE_ENV: test
+          RUN_CI_TESTS: true
 
       - name: Install uv
         run: |
@@ -83,6 +84,7 @@ jobs:
         env:
           CI: true
           NODE_ENV: test
+          RUN_CI_TESTS: true
           ELECTRON_DISABLE_SANDBOX: 1
 
       - name: Install uv
@@ -153,6 +155,7 @@ jobs:
         env:
           CI: true
           NODE_ENV: test
+          RUN_CI_TESTS: true
 
       - name: Install uv
         run: |
