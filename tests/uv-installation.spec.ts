@@ -51,7 +51,9 @@ test.describe('UV Installation Test', () => {
     }
   });
 
-  test('should show UV not installed status', async () => {
+  test('should show not installed status and successfully install UV', async () => {
+    test.setTimeout(180000); // 3 minutes for installation
+
     console.log('[UV INSTALL TEST] Checking UV status...');
 
     // Navigate to Settings tab
@@ -62,7 +64,7 @@ test.describe('UV Installation Test', () => {
     await page.screenshot({ path: 'test-results/uv-1-not-installed.png', fullPage: true });
 
     // Verify "UV is not installed" message
-    const bodyText = await page.textContent('body');
+    let bodyText = await page.textContent('body');
     expect(bodyText).toContain('UV is not installed');
 
     // Verify Install UV button exists
@@ -70,35 +72,41 @@ test.describe('UV Installation Test', () => {
     await expect(installButton).toBeVisible({ timeout: 5000 });
 
     console.log('[UV INSTALL TEST] UV not installed status confirmed');
-  });
 
-  test('should install UV when button is clicked', async () => {
+    // Click Install UV button
     console.log('[UV INSTALL TEST] Clicking Install UV button...');
-
-    const installButton = page.locator('button:has-text("Install UV")');
     await installButton.click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     await page.screenshot({ path: 'test-results/uv-2-installing.png', fullPage: true });
 
-    // Wait for installation to complete (may take 30-60 seconds)
-    console.log('[UV INSTALL TEST] Waiting for installation to complete...');
-    await page.waitForTimeout(5000);
+    // Wait for installation to complete (may take 60-120 seconds)
+    console.log('[UV INSTALL TEST] Waiting for installation to complete (up to 120 seconds)...');
 
-    // Check for "UV is installed and ready" message
-    // Installation might take time, so poll for the status
+    // Poll for "UV is installed and ready" message
     let installed = false;
-    for (let i = 0; i < 30; i++) {
-      const bodyText = await page.textContent('body');
+    for (let i = 0; i < 60; i++) {
+      bodyText = await page.textContent('body');
       if (bodyText?.includes('UV is installed and ready')) {
         installed = true;
         console.log(`[UV INSTALL TEST] UV installed successfully after ${i * 2} seconds`);
         break;
       }
+
+      // Also check for installation error
+      if (bodyText?.includes('installation failed') || bodyText?.includes('error')) {
+        console.log(`[UV INSTALL TEST] Installation error detected: ${bodyText.substring(0, 200)}`);
+        break;
+      }
+
       await page.waitForTimeout(2000);
     }
 
     await page.screenshot({ path: 'test-results/uv-3-installed.png', fullPage: true });
+
+    // Final body text for debugging
+    bodyText = await page.textContent('body');
+    console.log(`[UV INSTALL TEST] Final body text contains "installed": ${bodyText?.includes('installed')}`);
 
     expect(installed).toBe(true);
 
