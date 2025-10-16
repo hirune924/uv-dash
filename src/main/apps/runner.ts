@@ -74,7 +74,6 @@ interface ProcessInfo {
   startTime: number;
   appId: string;
   installPath: string;
-  onProcessStopped?: () => void;
   logPollInterval?: NodeJS.Timeout;
 }
 
@@ -297,9 +296,6 @@ function setupProcessHandlers(
   // This works with detached: true on all platforms including Windows
 
   proc.on('error', (error) => {
-    onLog(`[ERROR] Process error: ${error.message}`);
-    onLog(`[ERROR] Error name: ${error.name}`);
-    onLog(`[ERROR] Error stack: ${error.stack || 'N/A'}`);
     onLog(i18n.t('apps:error.process', { error: error.message }));
 
     const processInfo = runningProcesses.get(appId);
@@ -327,7 +323,6 @@ function setupProcessHandlers(
   });
 
   proc.on('close', (code, signal) => {
-    onLog(`[DEBUG] Process closed with code: ${code}, signal: ${signal || 'none'}`);
     onLog(i18n.t('apps:process.exited', { code }));
 
     const processInfo = runningProcesses.get(appId);
@@ -360,7 +355,6 @@ function setupProcessHandlers(
     startTime: Date.now(),
     appId,
     installPath: '', // Set later
-    onProcessStopped,
   };
   runningProcesses.set(appId, processInfo);
 
@@ -563,66 +557,49 @@ export async function runApp(
         // If "uvx" or "uv x", use as-is (completely replace uv command)
         onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
         const uvCmd = getUvCommand();
-        const fullCommand = [uvCmd, ...commandArgs.slice(1)].join(' ');
-        onLog(`[DEBUG] UV command: ${uvCmd}`);
-        onLog(`[DEBUG] Working directory: ${installPath}`);
-        onLog(`[DEBUG] Full command: ${fullCommand}`);
-        onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
         // Create log file for this app
         const logsDir = getLogsDir();
         const logFile = path.join(logsDir, `${appId}.log`);
-        const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+        const logFd = fs.openSync(logFile, 'a');
 
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
-          stdio: ['ignore', logFd, logFd], // Use file descriptor
-          detached: true, // Detach from parent so process survives Electron restart
+          stdio: ['ignore', logFd, logFd],
+          detached: true,
           env: {
             ...process.env,
-            PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
+            PYTHONUNBUFFERED: '1',
             ...env,
           },
         });
-
-        onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
-        onLog(`[DEBUG] Log file: ${logFile}`);
 
         // Close our file descriptor (child process has its own copy)
         fs.close(logFd, (err) => {
           if (err) console.error('[runner] Failed to close log fd:', err);
         });
 
-        // Common post-processing for proc
         return setupProcessHandlers(proc, appId, onLog, onPortDetected, onProcessStopped, logFile);
       } else {
         // Other uv subcommands (uv sync etc.) use as-is
         onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
         const uvCmd = getUvCommand();
-        const fullCommand = [uvCmd, ...commandArgs.slice(1)].join(' ');
-        onLog(`[DEBUG] UV command: ${uvCmd}`);
-        onLog(`[DEBUG] Working directory: ${installPath}`);
-        onLog(`[DEBUG] Full command: ${fullCommand}`);
-        onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
         // Create log file for this app
         const logsDir = getLogsDir();
         const logFile = path.join(logsDir, `${appId}.log`);
-        const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+        const logFd = fs.openSync(logFile, 'a');
 
         const proc = spawn(uvCmd, commandArgs.slice(1), {
           cwd: installPath,
-          stdio: ['ignore', logFd, logFd], // Use file descriptor
-          detached: true, // Detach from parent so process survives Electron restart
+          stdio: ['ignore', logFd, logFd],
+          detached: true,
           env: {
             ...process.env,
-            PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
+            PYTHONUNBUFFERED: '1',
             ...env,
           },
         });
-
-        onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
-        onLog(`[DEBUG] Log file: ${logFile}`);
 
         // Close our file descriptor (child process has its own copy)
         fs.close(logFd, (err) => {
@@ -635,34 +612,24 @@ export async function runApp(
       onLog(i18n.t('apps:command.run', { command: commandArgs.join(' ') }));
     }
 
-    // Log detailed spawn information for debugging
     const uvCmd = getUvCommand();
-    const fullCommand = [uvCmd, 'run', ...commandArgs].join(' ');
-    onLog(`[DEBUG] UV command: ${uvCmd}`);
-    onLog(`[DEBUG] Working directory: ${installPath}`);
-    onLog(`[DEBUG] Full command: ${fullCommand}`);
-    onLog(`[DEBUG] PATH: ${process.env.PATH}`);
 
     // Create log file for this app
     const logsDir = getLogsDir();
     const logFile = path.join(logsDir, `${appId}.log`);
-    const logFd = fs.openSync(logFile, 'a'); // Open file synchronously to get file descriptor
+    const logFd = fs.openSync(logFile, 'a');
 
     // Execute command with uv run
     const proc = spawn(uvCmd, ['run', ...commandArgs], {
       cwd: installPath,
-      stdio: ['ignore', logFd, logFd], // Use file descriptor
-      detached: true, // Detach from parent so process survives Electron restart
+      stdio: ['ignore', logFd, logFd],
+      detached: true,
       env: {
         ...process.env,
-        PYTHONUNBUFFERED: '1', // Disable Python output buffering for real-time logs
-        ...env, // Add user-defined environment variables
+        PYTHONUNBUFFERED: '1',
+        ...env,
       },
     });
-
-    // Log spawn result
-    onLog(`[DEBUG] Spawned process with PID: ${proc.pid || 'pending'}`);
-    onLog(`[DEBUG] Log file: ${logFile}`);
 
     // Close our file descriptor (child process has its own copy)
     fs.close(logFd, (err) => {
@@ -748,8 +715,8 @@ export async function stopApp(
     // Set timeout to force kill with SIGKILL after SIGKILL_TIMEOUT_MS
     // (Will be cleared by close/error event if process exits normally)
     const timeout = setTimeout(() => {
-      // Only force kill if process still exists AND is actually alive
-      if (runningProcesses.has(appId) && proc.pid && isProcessAlive(proc.pid)) {
+      // Only force kill if process still exists
+      if (runningProcesses.has(appId) && proc.pid) {
         onLog(i18n.t('apps:process.force_kill'));
         kill(proc.pid, 'SIGKILL', (error) => {
           if (error) {
@@ -762,9 +729,6 @@ export async function stopApp(
         });
       } else {
         // If process already terminated, just clean up
-        if (proc.pid) {
-          onLog(`[DEBUG] Process ${proc.pid} already terminated, skipping SIGKILL`);
-        }
         stoppingProcesses.delete(appId);
       }
     }, PROCESS.SIGKILL_TIMEOUT_MS);
