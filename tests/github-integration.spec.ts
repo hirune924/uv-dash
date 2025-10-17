@@ -69,9 +69,9 @@ test.describe.serial('GitHub Integration Test', () => {
     await installButton.click();
 
     // Wait for installation to complete by checking for "Ready" status
-    // GitHub clone + uv sync might take longer
+    // GitHub clone + uv sync might take longer (especially on Windows with large packages like polars)
     await page.waitForTimeout(3000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 60000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 180000 }); // 3 minutes for large packages
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     await page.screenshot({ path: 'test-results/github-4-installed.png', fullPage: true });
