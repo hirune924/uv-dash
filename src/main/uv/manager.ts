@@ -78,24 +78,71 @@ export async function installUv(
 
     onProgress?.(`Downloading: ${downloadUrl}`);
 
-    // Easier to use installation script
-    // Execute official installation script
-    const installScript = platform === 'win32'
-      ? 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
-      : 'curl -LsSf https://astral.sh/uv/install.sh | sh';
+    // Platform-specific installation
+    if (platform === 'win32') {
+      // Windows: Try multiple methods with fallback
+      let installed = false;
 
-    onProgress?.('Running installation script...');
+      // Method 1: PowerShell 5.x with official script
+      try {
+        onProgress?.('Method 1: Trying PowerShell installation...');
+        await execAsync('powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"', {
+          timeout: 90000,
+          env: { ...process.env, UV_INSTALL_DIR: uvDir },
+        });
+        onProgress?.('PowerShell installation completed');
+        installed = true;
+      } catch (error1: any) {
+        onProgress?.(`PowerShell failed: ${error1.message}`);
+        if (error1.stderr) onProgress?.(`stderr: ${error1.stderr}`);
 
-    try {
+        // Method 2: PowerShell 7 (pwsh)
+        try {
+          onProgress?.('Method 2: Trying pwsh (PowerShell 7) installation...');
+          await execAsync('pwsh -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"', {
+            timeout: 90000,
+            env: { ...process.env, UV_INSTALL_DIR: uvDir },
+          });
+          onProgress?.('pwsh installation completed');
+          installed = true;
+        } catch (error2: any) {
+          onProgress?.(`pwsh failed: ${error2.message}`);
+          if (error2.stderr) onProgress?.(`stderr: ${error2.stderr}`);
+
+          // Method 3: winget
+          try {
+            onProgress?.('Method 3: Trying winget installation...');
+            await execAsync('winget install --id=astral-sh.uv -e --silent', {
+              timeout: 90000,
+            });
+            onProgress?.('winget installation completed');
+            installed = true;
+          } catch (error3: any) {
+            onProgress?.(`winget failed: ${error3.message}`);
+            if (error3.stderr) onProgress?.(`stderr: ${error3.stderr}`);
+
+            // Method 4: Direct ZIP download would go here
+            throw new Error('All Windows installation methods failed');
+          }
+        }
+      }
+
+      if (installed) {
+        onProgress?.('uv installation completed');
+      }
+    } else {
+      // macOS/Linux: Use official script (works reliably)
+      onProgress?.('Running installation script...');
+      const installScript = 'curl -LsSf https://astral.sh/uv/install.sh | sh';
+
       const result = await execAsync(installScript, {
-        timeout: 90000, // 90 second timeout
+        timeout: 90000,
         env: {
           ...process.env,
           UV_INSTALL_DIR: uvDir,
         },
       });
 
-      // Log stdout and stderr for debugging
       if (result.stdout) {
         onProgress?.(`stdout: ${result.stdout}`);
       }
@@ -104,22 +151,6 @@ export async function installUv(
       }
 
       onProgress?.('uv installation completed');
-    } catch (execError: any) {
-      // Log complete error information for debugging
-      onProgress?.(`Installation script failed`);
-      onProgress?.(`Error message: ${execError.message || String(execError)}`);
-
-      if (execError.stdout) {
-        onProgress?.(`stdout: ${execError.stdout}`);
-      }
-      if (execError.stderr) {
-        onProgress?.(`stderr: ${execError.stderr}`);
-      }
-      if (execError.code) {
-        onProgress?.(`Exit code: ${execError.code}`);
-      }
-
-      throw execError;
     }
 
     // Verify installation
