@@ -70,13 +70,16 @@ jobs:
         shell: pwsh
         run: |
           echo "ELECTRON_NO_ATTACH_CONSOLE=1" | Out-File -Append -FilePath $env:GITHUB_ENV
-          echo "NODE_OPTIONS=--max-old-space-size=4096" | Out-File -Append -FilePath $env:GITHUB_ENV
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build application
         run: yarn build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Test UV installation flow (before installing uv)
         shell: pwsh
@@ -104,6 +107,7 @@ jobs:
         run: yarn test
         env:
           ELECTRON_DISABLE_SANDBOX: 1
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Upload test results
         if: always()
@@ -142,13 +146,16 @@ jobs:
         run: |
           echo "ELECTRON_DISABLE_SANDBOX=1" >> $GITHUB_ENV
           echo "LIBGL_ALWAYS_SOFTWARE=1" >> $GITHUB_ENV
-          echo "NODE_OPTIONS=--max-old-space-size=4096" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build application
         run: yarn build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Test UV installation flow (before installing uv)
         run: yarn playwright test uv-installation.ci.spec.ts
@@ -169,6 +176,8 @@ jobs:
 
       - name: Run tests
         run: yarn test
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Upload test results
         if: always()
