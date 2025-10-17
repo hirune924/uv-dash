@@ -43,6 +43,9 @@ test.describe.serial('Error Handling', () => {
 
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
+
+    // Wait for modal to close
+    await page.locator('.fixed.inset-0.bg-black\\/70').waitFor({ state: 'hidden', timeout: 5000 });
     await page.waitForTimeout(3000);
 
     await page.screenshot({ path: 'test-results/error-3-install-failed.png', fullPage: true });
@@ -73,6 +76,9 @@ test.describe.serial('Error Handling', () => {
 
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
+
+    // Wait for modal to close
+    await page.locator('.fixed.inset-0.bg-black\\/70').waitFor({ state: 'hidden', timeout: 5000 });
     await page.waitForTimeout(5000);
 
     await page.screenshot({ path: 'test-results/error-5-github-failed.png', fullPage: true });
@@ -103,6 +109,9 @@ test.describe.serial('Error Handling', () => {
 
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
+
+    // Wait for modal to close
+    await page.locator('.fixed.inset-0.bg-black\\/70').waitFor({ state: 'hidden', timeout: 5000 });
     await page.waitForTimeout(5000);
 
     await page.screenshot({ path: 'test-results/error-7-zip-failed.png', fullPage: true });
@@ -126,6 +135,9 @@ test.describe.serial('Error Handling', () => {
 
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
+
+    // Wait for modal to close
+    await page.locator('.fixed.inset-0.bg-black\\/70').waitFor({ state: 'hidden', timeout: 5000 });
     await page.waitForTimeout(2000);
     await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
