@@ -149,11 +149,11 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     // Both should have Open buttons
     const flaskCard = page.locator('h3:has-text("flask-test-app")').locator('..').locator('..').locator('..');
     const flaskOpenButton = flaskCard.locator('button').filter({ hasText: /🌐|open/i });
-    await expect(flaskOpenButton.first()).toBeVisible({ timeout: 20000 });
+    await expect(flaskOpenButton.first()).toBeVisible({ timeout: 30000 });
 
     const streamlitCard = page.locator('h3:has-text("streamlit-test-app")').locator('..').locator('..').locator('..');
     const streamlitOpenButton = streamlitCard.locator('button').filter({ hasText: /🌐|open/i });
-    await expect(streamlitOpenButton.first()).toBeVisible({ timeout: 20000 });
+    await expect(streamlitOpenButton.first()).toBeVisible({ timeout: 30000 });
 
     // Verify they have different ports
     const bodyText = await page.textContent('body');

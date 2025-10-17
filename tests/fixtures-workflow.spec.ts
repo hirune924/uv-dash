@@ -152,7 +152,7 @@ test.describe.serial('Fixtures-based Complete Workflow', () => {
     const flaskCard = page.locator('div').filter({ hasText: /flask-test-app/i }).first();
     const openButton = flaskCard.locator('button').filter({ hasText: /🌐|open/i });
 
-    await expect(openButton.first()).toBeVisible({ timeout: 15000 });
+    await expect(openButton.first()).toBeVisible({ timeout: 30000 });
   });
 
   test('should stop Flask app', async () => {

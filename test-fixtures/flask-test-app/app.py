@@ -21,6 +21,21 @@ def health():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
+    import sys
+    import socket
+
     port = int(os.environ.get('PORT', 0))  # Use 0 for auto port assignment
-    # Don't print port here when port=0, Werkzeug will log the actual bound port
+
+    # If port is 0, get an available port first so we can print it immediately
+    if port == 0:
+        # Let OS assign a port
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('', 0))
+        port = s.getsockname()[1]
+        s.close()
+
+    # Print port info immediately (for port detection in tests)
+    print(f' * Running on http://127.0.0.1:{port}', flush=True)
+    sys.stdout.flush()
+
     app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)

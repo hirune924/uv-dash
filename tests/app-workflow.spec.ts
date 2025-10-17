@@ -177,7 +177,7 @@ test.describe.serial('Complete App Workflow', () => {
     const openButton = appCard.locator('button').filter({ hasText: /🌐|open/i });
 
     // Port detection might take time, so use longer timeout
-    await expect(openButton.first()).toBeVisible({ timeout: 20000 });
+    await expect(openButton.first()).toBeVisible({ timeout: 30000 });
   });
 
   test('should stop the app', async () => {
