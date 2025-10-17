@@ -4,10 +4,11 @@ import type { GlobalSecret } from '../../shared/types';
 
 interface SettingsViewProps {
   uvInstalled: boolean;
+  uvInstallError: string | null;
   onInstallUv: () => void;
 }
 
-export function SettingsView({ uvInstalled, onInstallUv }: SettingsViewProps) {
+export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: SettingsViewProps) {
   const { t, i18n } = useTranslation('settings');
   const [secrets, setSecrets] = useState<GlobalSecret[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -180,6 +181,28 @@ export function SettingsView({ uvInstalled, onInstallUv }: SettingsViewProps) {
 
       <div className="bg-bg-secondary rounded-lg p-5 border border-border mb-4">
         <h3 className="text-sm font-semibold mb-3">UV Status</h3>
+
+        {/* Show error message if installation failed */}
+        {uvInstallError && (
+          <div className="mb-4 p-4 bg-status-error/10 border border-status-error/30 rounded">
+            <p className="text-sm text-status-error font-medium mb-2">
+              ⚠️ Automatic installation failed
+            </p>
+            <p className="text-xs text-text-secondary mb-3">
+              {uvInstallError}
+            </p>
+            <p className="text-xs text-text-secondary mb-3">
+              Please install UV manually by following the official installation guide:
+            </p>
+            <button
+              onClick={() => window.electronAPI.openExternal('https://docs.astral.sh/uv/getting-started/installation/')}
+              className="px-3 py-1.5 bg-accent-blue text-white rounded text-xs hover:bg-opacity-80 transition-colors"
+            >
+              📖 Open Installation Guide
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className={`w-2.5 h-2.5 rounded-full ${uvInstalled ? 'bg-status-running' : 'bg-status-error'}`} />

@@ -58,6 +58,9 @@ const electronAPI: ElectronAPI = {
 
   // Language switching
   changeLanguage: (lng) => ipcRenderer.invoke('change-language', lng),
+
+  // Utility
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

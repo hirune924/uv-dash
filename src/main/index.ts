@@ -543,3 +543,8 @@ ipcMain.handle('change-language', async (_event, lng: string) => {
   changeLanguage(lng);
   return { success: true };
 });
+
+// Utility IPC handlers
+ipcMain.handle('open-external', async (_event, url: string) => {
+  await shell.openExternal(url);
+});

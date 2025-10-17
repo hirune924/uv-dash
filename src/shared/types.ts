@@ -123,6 +123,9 @@ export interface ElectronAPI {
 
   // Language switching
   changeLanguage: (lng: string) => Promise<{ success: boolean }>;
+
+  // Utility
+  openExternal: (url: string) => Promise<void>;
 }
 
 // Window type extension
