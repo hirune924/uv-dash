@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { spawn } from 'child_process';
+import extract from 'extract-zip';
 import type { InstallRequest, AppInfo } from '../../shared/types';
 
 // Helper function to wrap spawn with Promise
@@ -175,11 +176,19 @@ async function prepareSource(
           zipPath = request.sourcePath;
         }
 
-        // Extract
+        // Extract ZIP - try unzip command first, fallback to extract-zip
         onLog('Extracting ZIP...');
         const unzipResult = await spawnAsync('unzip', ['-q', zipPath, '-d', installPath]);
+
         if (!unzipResult.success) {
-          return { success: false, error: `Failed to extract ZIP: ${unzipResult.error}` };
+          // unzip command failed (likely not installed on Windows)
+          // Fallback to cross-platform extract-zip library
+          onLog('unzip command not available, using Node.js extraction...');
+          try {
+            await extract(zipPath, { dir: path.resolve(installPath) });
+          } catch (error) {
+            return { success: false, error: `Failed to extract ZIP: ${error instanceof Error ? error.message : String(error)}` };
+          }
         }
 
         // Delete downloaded ZIP (not local file)
