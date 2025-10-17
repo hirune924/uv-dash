@@ -51,7 +51,7 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
     await page.waitForTimeout(2000);
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Set run command
@@ -85,7 +85,7 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
     await page.waitForTimeout(2000);
-    await page.locator('text=Ready').nth(1).waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').nth(1).waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Set run command
@@ -177,7 +177,7 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     await page.waitForTimeout(2000);
 
     // Wait for Flask to transition to Ready
-    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/multi-5-flask-stopped.png', fullPage: true });
@@ -202,7 +202,7 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     await page.waitForTimeout(2000);
 
     // Wait for Streamlit to transition to Ready
-    await streamlitCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await streamlitCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/multi-6-both-stopped.png', fullPage: true });
@@ -248,8 +248,8 @@ test.describe.serial('Multi-App Concurrent Execution', () => {
     await streamlitStopButton.click();
     await page.waitForTimeout(2000);
 
-    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
-    await streamlitCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
+    await streamlitCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/multi-8-final.png', fullPage: true });

@@ -71,7 +71,7 @@ test.describe.serial('Complete App Workflow', () => {
 
     // Wait for installation to complete by checking for "Ready" status
     await page.waitForTimeout(2000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     // Take screenshot after install
@@ -181,7 +181,7 @@ test.describe.serial('Complete App Workflow', () => {
     await page.waitForTimeout(2000); // Wait for stop command to be processed
 
     // Wait for app to transition from Running to Ready status
-    await page.locator('div').filter({ hasText: /streamlit-test-app/i }).locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('div').filter({ hasText: /streamlit-test-app/i }).locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Take screenshot

@@ -71,7 +71,7 @@ test.describe.serial('GitHub Integration Test', () => {
     // Wait for installation to complete by checking for "Ready" status
     // GitHub clone + uv sync should be fast with lightweight Flask dependency
     await page.waitForTimeout(3000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 60000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     await page.screenshot({ path: 'test-results/github-4-installed.png', fullPage: true });

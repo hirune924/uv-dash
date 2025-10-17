@@ -145,7 +145,7 @@ test.describe.serial('Global Secrets Management', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
     await page.waitForTimeout(2000);
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Open edit modal

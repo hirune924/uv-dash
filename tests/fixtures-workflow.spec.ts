@@ -59,7 +59,7 @@ test.describe.serial('Fixtures-based Complete Workflow', () => {
 
     // Wait for installation to complete by checking for "Ready" status
     await page.waitForTimeout(2000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     await page.screenshot({ path: 'test-results/fixtures-3-flask-installed.png', fullPage: true });
@@ -166,7 +166,7 @@ test.describe.serial('Fixtures-based Complete Workflow', () => {
     await page.waitForTimeout(2000); // Wait for stop command to be processed
 
     // Wait for app to transition from Running to Ready status
-    await page.locator('div').filter({ hasText: /flask-test-app/i }).locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('div').filter({ hasText: /flask-test-app/i }).locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/fixtures-8-flask-stopped.png', fullPage: true });

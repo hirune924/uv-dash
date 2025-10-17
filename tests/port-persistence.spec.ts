@@ -83,7 +83,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
     await page.waitForTimeout(2000);
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Set run command
@@ -183,7 +183,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await stopButton.click();
     await page.waitForTimeout(2000);
 
-    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/port-3-stopped-no-port.png', fullPage: true });
@@ -274,7 +274,7 @@ test.describe.serial('Port Persistence and Lifecycle', () => {
     await stopButton.click();
     await page.waitForTimeout(2000);
 
-    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Read state after stop

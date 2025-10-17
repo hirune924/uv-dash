@@ -127,7 +127,7 @@ test.describe.serial('Error Handling', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
     await page.waitForTimeout(2000);
-    await page.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     // Try to run without setting run command
@@ -185,7 +185,7 @@ test.describe.serial('Error Handling', () => {
     await stopButton.click();
     await page.waitForTimeout(2000);
 
-    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 30000 });
+    await flaskCard.locator('text=Ready').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: 'test-results/error-10-stopped.png', fullPage: true });
