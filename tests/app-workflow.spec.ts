@@ -71,9 +71,11 @@ test.describe.serial('Complete App Workflow', () => {
 
     // Wait for installation to complete by checking for "Ready" status for this specific app
     await page.waitForTimeout(2000); // Initial wait for install to start
-    // Wait for Ready status by looking for the status label (not just any "Ready" text)
-    await page.locator('text=streamlit-test-app').first().waitFor({ timeout: 30000 });
-    await page.locator('div:has-text("streamlit-test-app"):has-text("Ready")').first().waitFor({ timeout: 120000 });
+    // Wait for Ready status by looking for h3 (app name) then navigating to status
+    await page.locator('h3:has-text("streamlit-test-app")').first().waitFor({ timeout: 30000 });
+    // The status "Ready" is a sibling of the app name h3, within the same app card
+    // Use a more specific selector to avoid matching "UV Ready" in sidebar
+    await page.locator('h3:has-text("streamlit-test-app")').locator('..').locator('..').locator('span:has-text("Ready")').first().waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     // Take screenshot after install
