@@ -127,7 +127,8 @@ test.describe.serial('ZIP Integration Test', () => {
   });
 
   test('should detect Flask port from ZIP-installed app', async () => {
-    await page.waitForTimeout(10000);
+    // Wait longer for port detection (Werkzeug logs may be delayed on CI)
+    await page.waitForTimeout(15000);
 
     await page.screenshot({ path: 'test-results/zip-8-port-detected.png', fullPage: true });
 
@@ -135,7 +136,7 @@ test.describe.serial('ZIP Integration Test', () => {
     const flaskCard = page.locator('div').filter({ hasText: /flask-test-app/i }).first();
     const openButton = flaskCard.locator('button').filter({ hasText: /🌐|open/i });
 
-    await expect(openButton.first()).toBeVisible({ timeout: 20000 });
+    await expect(openButton.first()).toBeVisible({ timeout: 30000 });
   });
 
   test('should stop ZIP-installed Flask app', async () => {
