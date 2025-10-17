@@ -7,9 +7,9 @@ let electronApp: ElectronApplication;
 let page: Page;
 const testEnv = new TestEnvironment();
 
-// Use a real public GitHub repository
-const GITHUB_REPO_URL = 'https://github.com/gdamjan/uv-getting-started';
-const EXPECTED_APP_NAME = 'demo';
+// Use a real public GitHub repository (lightweight Flask example)
+const GITHUB_REPO_URL = 'https://github.com/astral-sh/uv-flask-example';
+const EXPECTED_APP_NAME = 'uv-example-flask';
 
 test.describe.serial('GitHub Integration Test', () => {
   test.beforeAll(async () => {
@@ -69,9 +69,9 @@ test.describe.serial('GitHub Integration Test', () => {
     await installButton.click();
 
     // Wait for installation to complete by checking for "Ready" status
-    // GitHub clone + uv sync might take longer (especially on Windows with large packages like polars)
+    // GitHub clone + uv sync should be fast with lightweight Flask dependency
     await page.waitForTimeout(3000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 180000 }); // 3 minutes for large packages
+    await page.locator('text=Ready').first().waitFor({ timeout: 60000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     await page.screenshot({ path: 'test-results/github-4-installed.png', fullPage: true });
