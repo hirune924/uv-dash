@@ -54,6 +54,7 @@ export async function isPortInUse(port: number): Promise<boolean> {
 
 /**
  * Get process health information
+ * Aggregates metrics from entire process tree (parent + children)
  */
 export async function getProcessHealth(
   pid: number,
@@ -69,15 +70,29 @@ export async function getProcessHealth(
     status = 'zombie';
   }
 
-  // Get CPU/memory usage
+  // Get CPU/memory usage for entire process tree
   let memoryUsage: number | undefined;
   let cpuUsage: number | undefined;
 
   if (isAlive) {
     try {
-      const stats = await pidusage(pid);
-      memoryUsage = Math.round(stats.memory / 1024 / 1024); // bytes → MB
-      cpuUsage = Math.round(stats.cpu * 10) / 10; // 1 decimal place
+      // Get all PIDs in process tree (parent + children)
+      const allPids = await getProcessTreePids(pid);
+
+      // pidusage supports array of PIDs
+      const stats = await pidusage(allPids);
+
+      // Aggregate metrics from all processes
+      let totalMemory = 0;
+      let totalCpu = 0;
+
+      for (const [pidStr, stat] of Object.entries(stats)) {
+        totalMemory += stat.memory;
+        totalCpu += stat.cpu;
+      }
+
+      memoryUsage = Math.round(totalMemory / 1024 / 1024); // bytes → MB
+      cpuUsage = Math.round(totalCpu * 10) / 10; // 1 decimal place
     } catch (error) {
       // May error immediately after process termination
       // Leave as undefined in that case
