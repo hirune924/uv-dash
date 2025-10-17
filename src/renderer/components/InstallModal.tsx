@@ -91,16 +91,17 @@ export function InstallModal({ onClose, onInstall }: InstallModalProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    await window.electronAPI.installApp({
+    // Close modal immediately and continue installation in background
+    onInstall();
+    window.electronAPI.installApp({
       sourceType,
       sourcePath,
       ref: ref || undefined,
       subdir: subdir || undefined,
       runCommand: runCommand || undefined,
     });
-    onInstall();
   };
 
   return (
