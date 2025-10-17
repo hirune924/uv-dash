@@ -269,7 +269,7 @@ ipcMain.handle('install-app', async (_event, request: InstallRequest) => {
   }
 });
 
-ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick<AppInfo, 'name' | 'runCommand' | 'env'>>) => {
+ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick<AppInfo, 'name' | 'runCommand' | 'env' | 'secrets' | 'secretRefs'>>) => {
   const app = apps.get(appId);
 
   if (!app) {
@@ -277,6 +277,7 @@ ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick
   }
 
   // Update app information
+  // We need to explicitly handle undefined values to allow clearing fields
   const updatedApp = {
     ...app,
     ...updates,
@@ -286,6 +287,19 @@ ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick
   if (updates.runCommand && app.status === 'error') {
     updatedApp.status = 'installed';
     updatedApp.errorMessage = undefined;
+  }
+
+  // Explicitly handle empty objects for env, secrets, and secretRefs
+  // If the update contains an empty object, we should clear the field
+  // undefined means "don't change", empty object means "clear all"
+  if (updates.env !== undefined) {
+    updatedApp.env = Object.keys(updates.env).length > 0 ? updates.env : undefined;
+  }
+  if (updates.secrets !== undefined) {
+    updatedApp.secrets = Object.keys(updates.secrets).length > 0 ? updates.secrets : undefined;
+  }
+  if (updates.secretRefs !== undefined) {
+    updatedApp.secretRefs = Object.keys(updates.secretRefs).length > 0 ? updates.secretRefs : undefined;
   }
 
   apps.set(appId, updatedApp);

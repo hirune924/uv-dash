@@ -49,6 +49,7 @@ export function saveApps(apps: Map<string, AppInfo>): void {
         runCommand: app.runCommand,
         env: app.env,
         secrets: encryptedSecrets,
+        secretRefs: app.secretRefs, // Save global secret references
         pid: app.pid, // Save PID for process recovery
         port: app.port, // Save port for process recovery
       };

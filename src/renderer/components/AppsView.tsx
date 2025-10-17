@@ -111,12 +111,19 @@ export function AppCard({ app, onUpdate }: AppCardProps) {
     newSecrets?: Record<string, string>,
     newSecretRefs?: Record<string, string>
   ) => {
+    // IMPORTANT: We need to distinguish between "not changed" and "cleared to empty"
+    // - undefined = field was not provided (don't change)
+    // - empty object {} = user cleared all values (clear the field)
+    // - object with keys = update with new values
+
+    // The backend will handle empty objects by setting the field to undefined
     await window.electronAPI.updateApp(app.id, {
       name: editName,
       runCommand: editCommand || undefined,
-      env: newEnv && Object.keys(newEnv).length > 0 ? newEnv : undefined,
-      secrets: newSecrets && Object.keys(newSecrets).length > 0 ? newSecrets : undefined,
-      secretRefs: newSecretRefs && Object.keys(newSecretRefs).length > 0 ? newSecretRefs : undefined,
+      // Always pass the value if provided (even if empty), so backend can clear it
+      env: newEnv,
+      secrets: newSecrets,
+      secretRefs: newSecretRefs,
     });
     setEditModalOpened(false);
     onUpdate();

@@ -20,6 +20,18 @@ def home():
 def health():
     return jsonify({'status': 'ok'})
 
+@app.route('/verify-secret')
+def verify_secret():
+    """
+    Test endpoint that returns the actual API_KEY value for verification.
+    This is ONLY for testing - never expose secrets in production!
+    """
+    api_key = os.environ.get('API_KEY', 'not_set')
+    return jsonify({
+        'api_key_received': api_key,
+        'api_key_length': len(api_key) if api_key != 'not_set' else 0
+    })
+
 if __name__ == '__main__':
     import sys
     import socket
