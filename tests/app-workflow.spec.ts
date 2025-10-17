@@ -69,9 +69,11 @@ test.describe.serial('Complete App Workflow', () => {
     const installButton = page.locator('button:has-text("Install")');
     await installButton.click();
 
-    // Wait for installation to complete by checking for "Ready" status
+    // Wait for installation to complete by checking for "Ready" status for this specific app
+    // Find the app card that contains streamlit-test-app and wait for its Ready status
     await page.waitForTimeout(2000); // Initial wait for install to start
-    await page.locator('text=Ready').first().waitFor({ timeout: 120000 });
+    const appCard = page.locator('div').filter({ hasText: /streamlit-test-app/i }).first();
+    await appCard.locator('text=Ready').waitFor({ timeout: 120000 });
     await page.waitForTimeout(1000); // Extra time for UI to stabilize
 
     // Take screenshot after install
@@ -86,6 +88,12 @@ test.describe.serial('Complete App Workflow', () => {
     console.log('[TEST] Starting Edit button test');
     await page.waitForTimeout(3000);
 
+    // Ensure we're on the Apps page by clicking the Apps tab
+    console.log('[TEST] Navigating to Apps page...');
+    const appsTab = page.locator('button,a').filter({ hasText: /📦.*Apps|Apps/i }).first();
+    await appsTab.click();
+    await page.waitForTimeout(1000);
+
     // Take screenshot
     await page.screenshot({ path: 'test-results/workflow-5-app-list.png', fullPage: true });
 
@@ -95,9 +103,10 @@ test.describe.serial('Complete App Workflow', () => {
     console.log(`[TEST] Body contains "streamlit-test-app": ${bodyText?.includes('streamlit-test-app')}`);
     console.log(`[TEST] Body contains "Ready": ${bodyText?.includes('Ready')}`);
 
-    // Find and click the Edit button (buttons are always visible)
+    // Find the app card for streamlit-test-app and then find its Edit button
     console.log('[TEST] Looking for Edit button...');
-    const editButton = page.locator('button[title="Edit"]').first();
+    const appCard = page.locator('div').filter({ hasText: /streamlit-test-app/i }).first();
+    const editButton = appCard.locator('button[title="Edit"]');
     const isVisible = await editButton.isVisible().catch(() => false);
     console.log(`[TEST] Edit button visible: ${isVisible}`);
 
