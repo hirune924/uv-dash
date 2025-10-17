@@ -276,11 +276,18 @@ ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick
     return { success: false, error: i18n.t('apps:error.not_found') };
   }
 
+  // Helper: Convert empty object to undefined (for clearing fields)
+  const normalizeField = <T extends Record<string, any>>(value: T | undefined): T | undefined =>
+    value && Object.keys(value).length === 0 ? undefined : value;
+
   // Update app information
-  // We need to explicitly handle undefined values to allow clearing fields
-  const updatedApp = {
+  const updatedApp: AppInfo = {
     ...app,
     ...updates,
+    // Empty object {} means clear field, undefined means don't change
+    env: updates.env !== undefined ? normalizeField(updates.env) : app.env,
+    secrets: updates.secrets !== undefined ? normalizeField(updates.secrets) : app.secrets,
+    secretRefs: updates.secretRefs !== undefined ? normalizeField(updates.secretRefs) : app.secretRefs,
   };
 
   // If runCommand is set, recover from error state
@@ -289,23 +296,9 @@ ipcMain.handle('update-app', async (_event, appId: string, updates: Partial<Pick
     updatedApp.errorMessage = undefined;
   }
 
-  // Explicitly handle empty objects for env, secrets, and secretRefs
-  // If the update contains an empty object, we should clear the field
-  // undefined means "don't change", empty object means "clear all"
-  if (updates.env !== undefined) {
-    updatedApp.env = Object.keys(updates.env).length > 0 ? updates.env : undefined;
-  }
-  if (updates.secrets !== undefined) {
-    updatedApp.secrets = Object.keys(updates.secrets).length > 0 ? updates.secrets : undefined;
-  }
-  if (updates.secretRefs !== undefined) {
-    updatedApp.secretRefs = Object.keys(updates.secretRefs).length > 0 ? updates.secretRefs : undefined;
-  }
-
   apps.set(appId, updatedApp);
-  sendAppUpdated(updatedApp); // 4. After updateApp
-
-  saveApps(apps); // Persist
+  sendAppUpdated(updatedApp);
+  saveApps(apps);
 
   return { success: true };
 });
