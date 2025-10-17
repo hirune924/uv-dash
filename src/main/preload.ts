@@ -31,6 +31,55 @@ const electronAPI: ElectronAPI = {
     };
   },
 
+  // Auto-updater events
+  onUpdateChecking: (callback) => {
+    const subscription = () => callback();
+    ipcRenderer.on('update:checking', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:checking', subscription);
+    };
+  },
+
+  onUpdateAvailable: (callback) => {
+    const subscription = (_event: any, info: any) => callback(info);
+    ipcRenderer.on('update:available', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:available', subscription);
+    };
+  },
+
+  onUpdateNotAvailable: (callback) => {
+    const subscription = (_event: any, info: any) => callback(info);
+    ipcRenderer.on('update:not-available', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:not-available', subscription);
+    };
+  },
+
+  onUpdateDownloading: (callback) => {
+    const subscription = (_event: any, progress: any) => callback(progress);
+    ipcRenderer.on('update:downloading', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:downloading', subscription);
+    };
+  },
+
+  onUpdateDownloaded: (callback) => {
+    const subscription = (_event: any, info: any) => callback(info);
+    ipcRenderer.on('update:downloaded', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:downloaded', subscription);
+    };
+  },
+
+  onUpdateError: (callback) => {
+    const subscription = (_event: any, error: any) => callback(error);
+    ipcRenderer.on('update:error', subscription);
+    return () => {
+      ipcRenderer.removeListener('update:error', subscription);
+    };
+  },
+
   // Global secrets management
   listGlobalSecrets: () => ipcRenderer.invoke('list-global-secrets'),
   createGlobalSecret: (secret) => ipcRenderer.invoke('create-global-secret', secret),
@@ -58,6 +107,10 @@ const electronAPI: ElectronAPI = {
 
   // Language switching
   changeLanguage: (lng) => ipcRenderer.invoke('change-language', lng),
+
+  // Auto-updater
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
 
   // Utility
   openExternal: (url) => ipcRenderer.invoke('open-external', url),

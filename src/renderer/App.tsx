@@ -5,6 +5,7 @@ import { AppsView } from './components/AppsView';
 import { LogsView } from './components/LogsView';
 import { SettingsView } from './components/SettingsView';
 import { InstallModal } from './components/InstallModal';
+import { UpdateNotification } from './components/UpdateNotification';
 
 type View = 'apps' | 'logs' | 'settings';
 
@@ -115,6 +116,9 @@ export function App() {
           }}
         />
       )}
+
+      {/* Auto-update notification (bottom-left) */}
+      <UpdateNotification />
     </div>
   );
 }

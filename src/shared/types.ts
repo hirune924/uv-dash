@@ -81,6 +81,25 @@ export interface ProcessHealth {
   status: 'running' | 'zombie' | 'unknown';
 }
 
+/**
+ * Update information
+ */
+export interface UpdateInfo {
+  version: string;
+  releaseNotes?: string;
+  releaseDate?: string;
+}
+
+/**
+ * Download progress information
+ */
+export interface DownloadProgress {
+  percent: number;
+  bytesPerSecond: number;
+  transferred: number;
+  total: number;
+}
+
 // Electron API type definition (used on renderer side)
 export interface ElectronAPI {
   // App management
@@ -103,6 +122,14 @@ export interface ElectronAPI {
   onLog: (callback: (log: LogMessage) => void) => () => void;
   onAppUpdated: (callback: (app: AppInfo) => void) => () => void; // App state change event
 
+  // Auto-updater events
+  onUpdateChecking: (callback: () => void) => () => void;
+  onUpdateAvailable: (callback: (info: UpdateInfo) => void) => () => void;
+  onUpdateNotAvailable: (callback: (info: UpdateInfo) => void) => () => void;
+  onUpdateDownloading: (callback: (progress: DownloadProgress) => void) => () => void;
+  onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => () => void;
+  onUpdateError: (callback: (error: { message: string }) => void) => () => void;
+
   // UV management
   checkUv: () => Promise<{ installed: boolean; version?: string }>;
   installUv: () => Promise<{ success: boolean; error?: string }>;
@@ -123,6 +150,10 @@ export interface ElectronAPI {
 
   // Language switching
   changeLanguage: (lng: string) => Promise<{ success: boolean }>;
+
+  // Auto-updater
+  checkForUpdates: () => Promise<void>;
+  quitAndInstall: () => Promise<void>;
 
   // Utility
   openExternal: (url: string) => Promise<void>;

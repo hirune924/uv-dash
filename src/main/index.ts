@@ -14,6 +14,7 @@ import {
   deleteGlobalSecret,
 } from './storage/secrets-storage';
 import i18n, { changeLanguage } from './i18n';
+import { initUpdater, checkForUpdates, quitAndInstall } from './updater';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -173,6 +174,13 @@ app.whenReady().then(async () => {
     saveApps(apps);
 
     createWindow();
+
+    // Initialize auto-updater (skip in development)
+    if (mainWindow && !app.isPackaged) {
+      console.log('[Updater] Skipping auto-update in development mode');
+    } else if (mainWindow) {
+      initUpdater(mainWindow);
+    }
 
     // On macOS, recreate window when dock icon is clicked
     app.on('activate', () => {
@@ -547,4 +555,13 @@ ipcMain.handle('change-language', async (_event, lng: string) => {
 // Utility IPC handlers
 ipcMain.handle('open-external', async (_event, url: string) => {
   await shell.openExternal(url);
+});
+
+// Auto-updater IPC handlers
+ipcMain.handle('check-for-updates', async () => {
+  await checkForUpdates();
+});
+
+ipcMain.handle('quit-and-install', async () => {
+  quitAndInstall();
 });
