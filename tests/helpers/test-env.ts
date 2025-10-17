@@ -26,6 +26,15 @@ export class TestEnvironment {
       fs.mkdirSync(this.uvdashDir, { recursive: true });
     }
 
+    // Set default Python version to 3.12 for UV to avoid using unstable versions like 3.14
+    try {
+      const { execSync } = require('child_process');
+      execSync('uv python pin 3.12', { stdio: 'inherit' });
+      console.log('[TEST ENV] Set default Python version to 3.12 via uv python pin');
+    } catch (error) {
+      console.log('[TEST ENV] Warning: Failed to set Python version:', error);
+    }
+
     // Backup existing apps.json if it exists
     if (fs.existsSync(this.appsJsonPath)) {
       fs.copyFileSync(this.appsJsonPath, this.backupPath);
