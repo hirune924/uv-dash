@@ -6,11 +6,12 @@ interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   uvInstalled: boolean;
+  uvInstalling: boolean;
   onInstallUv: () => void;
   appsCount: number;
 }
 
-export function Sidebar({ currentView, onViewChange, uvInstalled, onInstallUv, appsCount }: SidebarProps) {
+export function Sidebar({ currentView, onViewChange, uvInstalled, uvInstalling, onInstallUv, appsCount }: SidebarProps) {
   const menuItems: { view: View; icon: string; label: string; badge?: number }[] = [
     { view: 'apps', icon: '📦', label: 'Apps', badge: appsCount },
     { view: 'logs', icon: '📋', label: 'Logs' },
@@ -26,12 +27,13 @@ export function Sidebar({ currentView, onViewChange, uvInstalled, onInstallUv, a
 
       {!uvInstalled && (
         <div className="mx-3 my-4 p-3 bg-bg-tertiary rounded-md border border-accent-orange">
-          <p className="text-xs font-medium mb-2">UV not installed</p>
+          <p className="text-xs font-medium mb-2">{uvInstalling ? 'Installing UV...' : 'UV not installed'}</p>
           <button
             onClick={onInstallUv}
-            className="w-full py-1.5 bg-accent-orange text-white text-xs rounded hover:opacity-90 transition-opacity"
+            disabled={uvInstalling}
+            className="w-full py-1.5 bg-accent-orange text-white text-xs rounded hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Install Now
+            {uvInstalling ? 'Installing...' : 'Install Now'}
           </button>
         </div>
       )}

@@ -593,6 +593,7 @@ export async function runApp(
           cwd: installPath,
           stdio: ['ignore', logFd, logFd],
           detached: true,
+          windowsHide: true,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',
@@ -620,6 +621,7 @@ export async function runApp(
           cwd: installPath,
           stdio: ['ignore', logFd, logFd],
           detached: true,
+          windowsHide: true,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',
@@ -650,6 +652,7 @@ export async function runApp(
       cwd: installPath,
       stdio: ['ignore', logFd, logFd],
       detached: true,
+      windowsHide: true,
       env: {
         ...process.env,
         PYTHONUNBUFFERED: '1',

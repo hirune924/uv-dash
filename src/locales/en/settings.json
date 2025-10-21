@@ -36,7 +36,10 @@
     "title": "UV Status",
     "installed": "UV is installed and ready",
     "not_installed": "UV is not installed",
+    "installing": "Installing UV...",
+    "installing_description": "This may take a few minutes. Please wait...",
     "install_button": "Install UV",
+    "install_button_loading": "Installing...",
     "error_title": "⚠️ Automatic installation failed",
     "error_manual": "Please install UV manually by following the official installation guide:",
     "error_guide_button": "📖 Open Installation Guide"
@@ -70,6 +73,19 @@
       "button_loading": "Updating...",
       "success": "UV updated successfully",
       "error": "Failed to update UV: {{error}}"
+    },
+    "python_version": {
+      "title": "Default Python Version",
+      "description": "Set the default Python version for UV. This will be used for all applications unless specified otherwise.",
+      "button": "Set as Default",
+      "button_loading": "Installing...",
+      "loading": "Loading...",
+      "no_versions": "No versions available",
+      "confirm": "This will install Python {{version}} and set it as the default. Continue?",
+      "success": "Python {{version}} has been installed and set as default",
+      "error": "Failed to install Python: {{error}}",
+      "error_no_version": "Please select a Python version",
+      "note": "UV will automatically install the selected Python version if it's not already installed."
     }
   },
   "about": {

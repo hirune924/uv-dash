@@ -107,11 +107,9 @@ export function InstallModal({ onClose, onInstall }: InstallModalProps) {
   return (
     <div
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-      onClick={onClose}
     >
       <div
         className="fade-in bg-bg-secondary rounded-xl border border-border w-[520px] max-h-[80vh] overflow-auto shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
           <h2 className="text-lg font-semibold">Install New App</h2>

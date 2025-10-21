@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import type { AppInfo, InstallRequest, GlobalSecret } from '../shared/types';
-import { checkUv, installUv, updateUv } from './uv/manager';
+import { checkUv, installUv, updateUv, listPythonVersions, installPythonVersion } from './uv/manager';
 import { installApp, getAppsDir } from './apps/installer';
 import { runApp as runAppProcess, stopApp as stopAppProcess, isRunning, getAppHealth, getAllAppHealth, recoverProcess } from './apps/runner';
 import { loadApps, saveApps } from './storage/persistence';
@@ -466,6 +466,18 @@ ipcMain.handle('install-uv', async () => {
 
 ipcMain.handle('update-uv', async () => {
   return await updateUv((message) => {
+    sendLog('system', message);
+  });
+});
+
+ipcMain.handle('list-python-versions', async () => {
+  return await listPythonVersions((message) => {
+    sendLog('system', message);
+  });
+});
+
+ipcMain.handle('install-python-version', async (_, version: string) => {
+  return await installPythonVersion(version, (message) => {
     sendLog('system', message);
   });
 });

@@ -16,6 +16,7 @@ function spawnAsync(
     const proc = spawn(command, args, {
       ...options,
       stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
     });
 
     let stdout = '';
@@ -266,11 +267,12 @@ async function runUvSync(
       }
     }
 
-    onLog('Running uv sync --frozen --no-dev...');
+    onLog('Running uv sync...');
 
-    const uvProcess = spawn(getUvCommand(), ['sync', '--frozen', '--no-dev'], {
+    const uvProcess = spawn(getUvCommand(), ['sync'], {
       cwd: installPath,
       stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
     });
 
     uvProcess.stdout?.on('data', (data) => {
