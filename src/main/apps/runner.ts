@@ -659,6 +659,7 @@ export async function runApp(
     }
 
     const uvCmd = getUvCommand();
+    onLog(`[DEBUG] Using UV command: ${uvCmd}`);
 
     // Create log file for this app
     const logsDir = getLogsDir();
