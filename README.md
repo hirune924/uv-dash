@@ -3,6 +3,10 @@
 <div align="center">
   <img src="logo/logo.png" alt="UV Dash Logo" width="200"/>
   <p><strong>A desktop application for easily managing and running Python applications</strong></p>
+
+  [![Test](https://github.com/hirune924/uv-dash/actions/workflows/test.yml/badge.svg)](https://github.com/hirune924/uv-dash/actions/workflows/test.yml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
   <p><a href="README.ja.md">日本語</a> | <a href="#documentation">Documentation</a></p>
 </div>
 
@@ -12,7 +16,7 @@
 
 UV Dash is a desktop application that makes Python development accessible to everyone. Install and run [uv](https://github.com/astral-sh/uv)-managed Python applications with just a few clicks—no terminal or command-line knowledge required.
 
-https://github.com/user-attachments/assets/6c1bc3a1-4cfd-4f73-9be1-969189864366
+https://github.com/user-attachments/assets/da3856a4-d110-4fae-81df-f32976570745
 
 ### Why UV Dash?
 
