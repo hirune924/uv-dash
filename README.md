@@ -16,7 +16,7 @@
 
 UV Dash is a desktop application that makes Python development accessible to everyone. Install and run [uv](https://github.com/astral-sh/uv)-managed Python applications with just a few clicks—no terminal or command-line knowledge required.
 
-https://github.com/user-attachments/assets/da3856a4-d110-4fae-81df-f32976570745
+https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 
 ### Why UV Dash?
 
