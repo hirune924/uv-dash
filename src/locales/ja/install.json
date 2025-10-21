@@ -1,0 +1,6 @@
+{
+  "git": {
+    "required": "ℹ️ GitHub連携を使用するにはGitが必要です",
+    "install": "Gitをインストール"
+  }
+}

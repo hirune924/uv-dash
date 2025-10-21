@@ -1,0 +1,81 @@
+{
+  "secrets": {
+    "title": "グローバルシークレット",
+    "add_button": "+ シークレットを追加",
+    "edit_button": "編集",
+    "delete_button": "削除",
+    "required_fields": "名前と値は必須です",
+    "create_failed": "シークレットの作成に失敗しました: {{error}}",
+    "update_failed": "シークレットの更新に失敗しました: {{error}}",
+    "delete_confirm": "このシークレットは{{count}}個のアプリで使用されています。削除してもよろしいですか？",
+    "delete_failed": "シークレットの削除に失敗しました: {{error}}",
+    "no_secrets": "グローバルシークレットが設定されていません。複数のアプリでシークレットを共有するには追加してください。",
+    "modal": {
+      "title_add": "新しいシークレットを追加",
+      "title_edit": "シークレットを編集",
+      "name_label": "名前",
+      "name_placeholder": "例: OpenAI API Key",
+      "name_help": "この名前はシークレットを識別するために使用されます。各アプリは独自の環境変数名を割り当てることができます。",
+      "value_label": "値",
+      "value_placeholder_new": "シークレットの値",
+      "value_placeholder_edit": "空欄のままにすると現在の値が保持されます",
+      "description_label": "説明（任意）",
+      "description_placeholder": "任意の説明",
+      "cancel_button": "キャンセル",
+      "create_button": "作成",
+      "update_button": "更新",
+      "required": "*"
+    }
+  },
+  "language": {
+    "title": "言語",
+    "label": "インターフェース言語:",
+    "description": "変更は即座に反映されます。すべてのUIテキストとメッセージに影響します。"
+  },
+  "uv": {
+    "title": "UVステータス",
+    "installed": "UVはインストール済みで準備完了です",
+    "not_installed": "UVがインストールされていません",
+    "install_button": "UVをインストール",
+    "error_title": "⚠️ 自動インストールに失敗しました",
+    "error_manual": "公式インストールガイドに従って手動でUVをインストールしてください:",
+    "error_guide_button": "📖 インストールガイドを開く"
+  },
+  "advanced": {
+    "title": "詳細設定",
+    "cleanup": {
+      "title": "孤立したディレクトリのクリーンアップ",
+      "description": "アプリリストに登録されていないappsフォルダ内のディレクトリを削除します。これは、インストールが中断またはクラッシュした場合に発生する可能性があります。",
+      "button": "今すぐクリーンアップ",
+      "button_loading": "クリーンアップ中...",
+      "confirm": "appsフォルダ内のアプリリストに登録されていないすべてのディレクトリが削除されます。続行しますか？",
+      "success": "{{count}}個の孤立したディレクトリ{{plural}}を正常にクリーンアップしました",
+      "error": "クリーンアップに失敗しました: {{error}}"
+    },
+    "directory": {
+      "title": "アプリインストールディレクトリ",
+      "description": "アプリケーションのインストール先を変更します。現在のディレクトリ:",
+      "placeholder": "/path/to/apps/directory",
+      "browse_button": "参照",
+      "save_button": "保存",
+      "save_button_loading": "保存中...",
+      "error_empty": "ディレクトリを選択してください",
+      "success": "アプリディレクトリが正常に更新されました",
+      "error": "ディレクトリの更新に失敗しました: {{error}}"
+    },
+    "update_uv": {
+      "title": "UVのアップデート",
+      "description": "最新バージョンのUVにアップデートします（使用コマンド:",
+      "button": "UVをアップデート",
+      "button_loading": "アップデート中...",
+      "success": "UVが正常にアップデートされました",
+      "error": "UVのアップデートに失敗しました: {{error}}"
+    }
+  },
+  "about": {
+    "title": "アプリについて",
+    "description": "UV DashはUVを使用してPythonプロジェクトを管理するためのデスクトップアプリケーションです。Pythonアプリケーションを簡単にインストール、実行、管理できます。",
+    "version": "バージョン: {{version}}",
+    "tech": "技術スタック: Electron + React + TypeScript + Tailwind CSS"
+  }
+}

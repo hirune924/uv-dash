@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #1e1e1e;
+  --color-bg-secondary: #252526;
+  --color-bg-tertiary: #2d2d30;
+  --color-bg-elevated: #323233;
+  --color-bg-hover: #2a2d2e;
+  --color-border: #3e3e42;
+  --color-border-focus: #007acc;
+  --color-text-primary: #cccccc;
+  --color-text-secondary: #858585;
+  --color-text-tertiary: #6a6a6a;
+  --color-accent-blue: #007acc;
+  --color-accent-blue-hover: #1a8cd8;
+  --color-accent-green: #16825d;
+  --color-accent-green-hover: #1a9870;
+  --color-accent-orange: #d18616;
+  --color-accent-red: #f14c4c;
+  --color-status-running: #4ec9b0;
+  --color-status-installed: #4e94ce;
+  --color-status-error: #f48771;
+  --color-status-installing: #dcdcaa;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border);
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

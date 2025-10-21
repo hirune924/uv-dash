@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Build application
+        run: yarn build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Build packages (macOS)
+        if: matrix.platform == 'mac'
+        run: yarn package:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Build packages (Linux)
+        if: matrix.platform == 'linux'
+        run: yarn package:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Build packages (Windows)
+        if: matrix.platform == 'windows'
+        run: yarn package:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Upload artifacts (macOS)
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest-mac.yml
+          retention-days: 7
+
+      - name: Upload artifacts (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/latest-linux.yml
+          retention-days: 7
+
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/*.exe
+            release/*.zip
+            release/*.blockmap
+            release/latest.yml
+          retention-days: 7
+
+  create-release:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/macos-artifacts/*
+            artifacts/linux-artifacts/*
+            artifacts/windows-artifacts/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

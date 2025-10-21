@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/*
+!build/icons/
+out/
+release/
+
+# Electron specific
+*.app/
+*.dmg
+*.exe
+*.AppImage
+
+# Python
+*.py[cod]
+__pycache__/
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+
+# Cache
+.cache/
+*.cache
+.venv/
+*.pyc
+__pycache__/
+
+# Test backups
+*.test-backup
+
+# Test results
+test-results/
+playwright-report/
+dev/
+
+# Project specific
+CLAUDE.md
+.claude/

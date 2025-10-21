@@ -1,0 +1,38 @@
+{
+  "process": {
+    "zombie": "警告: プロセス {{pid}} がゾンビ化しています。クリーンアップを実行します。",
+    "terminated": "警告: プロセス {{pid}} が終了しています（PID無効）。",
+    "started": "アプリが起動しました (PID: {{pid}})",
+    "stopping": "アプリを停止しています...",
+    "stopped": "アプリが停止しました",
+    "exited": "プロセスが終了しました (exit code: {{code}})",
+    "sigterm_sent": "プロセスツリー {{pid}} にSIGTERMを送信しました",
+    "sigterm_warning": "SIGTERM送信時の警告: {{message}}",
+    "force_kill": "プロセスが応答しないため、強制終了します...",
+    "force_killed": "プロセスツリーを強制終了しました (SIGKILL)",
+    "stop_requested": "停止リクエストを送信しました（プロセスの終了を待機中...）",
+    "port_detected": "ポート {{port}} を検出しました",
+    "removed": "アプリを削除しました",
+    "opened_in_browser": "ブラウザで開きました: {{url}}"
+  },
+  "command": {
+    "run": "起動コマンド: uv run {{command}}"
+  },
+  "error": {
+    "already_running": "アプリは既に実行中です",
+    "no_command": "実行コマンドが指定されていません。アプリを編集してコマンドを設定してください。",
+    "empty_command": "実行コマンドが空です",
+    "not_running": "アプリは実行されていません",
+    "no_pid": "プロセスIDが取得できません",
+    "already_stopping": "アプリは既に停止処理中です",
+    "process": "プロセスエラー: {{error}}",
+    "start_failed": "起動に失敗しました: {{message}}",
+    "stop_failed": "停止に失敗しました: {{message}}",
+    "sigkill_error": "SIGKILL送信時のエラー: {{message}}",
+    "not_found": "アプリが見つかりません",
+    "not_installed": "アプリがインストールされていません",
+    "remove_failed": "削除に失敗しました: {{message}}",
+    "no_port": "ポート番号が検出されていません",
+    "browser_open_failed": "ブラウザで開けませんでした: {{message}}"
+  }
+}

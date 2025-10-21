@@ -1,0 +1,38 @@
+{
+  "process": {
+    "zombie": "Warning: Process {{pid}} has become a zombie. Performing cleanup.",
+    "terminated": "Warning: Process {{pid}} has terminated (PID invalid).",
+    "started": "Application started (PID: {{pid}})",
+    "stopping": "Stopping application...",
+    "stopped": "Application stopped",
+    "exited": "Process exited (exit code: {{code}})",
+    "sigterm_sent": "Sent SIGTERM to process tree {{pid}}",
+    "sigterm_warning": "Warning when sending SIGTERM: {{message}}",
+    "force_kill": "Process is not responding, forcing termination...",
+    "force_killed": "Forcefully terminated process tree (SIGKILL)",
+    "stop_requested": "Stop request sent (waiting for process to exit...)",
+    "port_detected": "Port {{port}} detected",
+    "removed": "Application removed",
+    "opened_in_browser": "Opened in browser: {{url}}"
+  },
+  "command": {
+    "run": "Run command: uv run {{command}}"
+  },
+  "error": {
+    "already_running": "Application is already running",
+    "no_command": "No run command specified. Please edit the app and set a command.",
+    "empty_command": "Run command is empty",
+    "not_running": "Application is not running",
+    "no_pid": "Process ID could not be obtained",
+    "already_stopping": "Application is already being stopped",
+    "process": "Process error: {{error}}",
+    "start_failed": "Failed to start: {{message}}",
+    "stop_failed": "Failed to stop: {{message}}",
+    "sigkill_error": "Error sending SIGKILL: {{message}}",
+    "not_found": "Application not found",
+    "not_installed": "Application is not installed",
+    "remove_failed": "Failed to remove: {{message}}",
+    "no_port": "Port number not detected",
+    "browser_open_failed": "Failed to open in browser: {{message}}"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "name": "uv-dash",
+  "version": "0.1.0",
+  "description": "Electron + uv desktop client for running Python applications",
+  "main": "dist/main/index.js",
+  "author": "hirune924 <nori.o920924@outlook.jp>",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:icons": "electron-icon-builder --input=./logo/logo.png --output=./build --flatten",
+    "dev": "npm run build && electron .",
+    "clean": "rm -rf dist",
+    "package": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:all": "npm run build && electron-builder --mac --win --linux",
+    "test": "npm run build && cross-env NODE_ENV=test playwright test",
+    "test:unit": "cross-env NODE_ENV=test playwright test port-detection.spec.ts",
+    "test:e2e": "npm run build && cross-env NODE_ENV=test playwright test app.spec.ts",
+    "test:workflow": "npm run build && cross-env NODE_ENV=test playwright test app-workflow.spec.ts",
+    "test:fixtures": "npm run build && cross-env NODE_ENV=test playwright test fixtures-workflow.spec.ts",
+    "test:uv": "npm run build && cross-env NODE_ENV=test playwright test uv-installation.ci.spec.ts",
+    "test:ui": "npm run build && cross-env NODE_ENV=test playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "^24.7.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
+    "electron": "^38.2.2",
+    "electron-builder": "^26.0.12",
+    "electron-icon-builder": "^2.0.1",
+    "esbuild": "^0.25.10",
+    "playwright": "^1.56.0",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2",
+    "extract-zip": "^2.0.1",
+    "i18next": "^25.6.0",
+    "pidusage": "^4.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-i18next": "^16.0.1",
+    "react-is": "^19.2.0",
+    "recharts": "^3.2.1",
+    "shell-quote": "^1.8.3",
+    "tree-kill": "^1.2.2"
+  },
+  "build": {
+    "appId": "com.uvdash.app",
+    "productName": "UV Dash",
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "hirune924",
+      "repo": "uv-dash"
+    },
+    "mac": {
+      "icon": "build/icons/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "icon": "build/icons/icon.ico",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "linux": {
+      "icon": "build/icons/512x512.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    }
+  }
+}

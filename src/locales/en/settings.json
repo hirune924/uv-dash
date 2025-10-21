@@ -1,0 +1,81 @@
+{
+  "secrets": {
+    "title": "Global Secrets",
+    "add_button": "+ Add Secret",
+    "edit_button": "Edit",
+    "delete_button": "Delete",
+    "required_fields": "Name and Value are required",
+    "create_failed": "Failed to create secret: {{error}}",
+    "update_failed": "Failed to update secret: {{error}}",
+    "delete_confirm": "This secret is used by {{count}} app(s). Are you sure you want to delete it?",
+    "delete_failed": "Failed to delete secret: {{error}}",
+    "no_secrets": "No global secrets configured. Add one to share secrets across multiple apps.",
+    "modal": {
+      "title_add": "Add New Secret",
+      "title_edit": "Edit Secret",
+      "name_label": "Name",
+      "name_placeholder": "e.g., OpenAI API Key",
+      "name_help": "This name helps you identify the secret. Each app can assign its own environment variable name.",
+      "value_label": "Value",
+      "value_placeholder_new": "Secret value",
+      "value_placeholder_edit": "Leave empty to keep current value",
+      "description_label": "Description (optional)",
+      "description_placeholder": "Optional description",
+      "cancel_button": "Cancel",
+      "create_button": "Create",
+      "update_button": "Update",
+      "required": "*"
+    }
+  },
+  "language": {
+    "title": "Language",
+    "label": "Interface Language:",
+    "description": "Changes apply immediately. This affects all UI text and messages."
+  },
+  "uv": {
+    "title": "UV Status",
+    "installed": "UV is installed and ready",
+    "not_installed": "UV is not installed",
+    "install_button": "Install UV",
+    "error_title": "⚠️ Automatic installation failed",
+    "error_manual": "Please install UV manually by following the official installation guide:",
+    "error_guide_button": "📖 Open Installation Guide"
+  },
+  "advanced": {
+    "title": "Advanced Settings",
+    "cleanup": {
+      "title": "Cleanup Orphaned Directories",
+      "description": "Remove directories in the apps folder that are not registered in the app list. This can happen if an installation was interrupted or crashed.",
+      "button": "Cleanup Now",
+      "button_loading": "Cleaning up...",
+      "confirm": "This will delete all directories in the apps folder that are not registered in the app list. Continue?",
+      "success": "Successfully cleaned up {{count}} orphaned director{{plural}}",
+      "error": "Failed to cleanup: {{error}}"
+    },
+    "directory": {
+      "title": "Apps Installation Directory",
+      "description": "Change where applications are installed. Current directory:",
+      "placeholder": "/path/to/apps/directory",
+      "browse_button": "Browse",
+      "save_button": "Save",
+      "save_button_loading": "Saving...",
+      "error_empty": "Please select a directory",
+      "success": "Apps directory updated successfully",
+      "error": "Failed to update directory: {{error}}"
+    },
+    "update_uv": {
+      "title": "Update UV",
+      "description": "Update UV to the latest version using",
+      "button": "Update UV",
+      "button_loading": "Updating...",
+      "success": "UV updated successfully",
+      "error": "Failed to update UV: {{error}}"
+    }
+  },
+  "about": {
+    "title": "About",
+    "description": "UV Dash is a desktop application for managing Python projects using UV. Install, run, and manage your Python applications with ease.",
+    "version": "Version: {{version}}",
+    "tech": "Built with Electron + React + TypeScript + Tailwind CSS"
+  }
+}
