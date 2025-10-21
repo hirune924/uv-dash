@@ -104,21 +104,35 @@ const STATS_MONITORING_INTERVAL_MS = 5000; // Every 5 seconds
 
 /**
  * Get uv command path (prioritize app-installed version, fallback to system PATH)
+ * On Windows, use uvw.exe to prevent console window from appearing
  */
 function getUvCommand(): string {
   const homeDir = os.homedir();
   const uvDir = path.join(homeDir, '.uvdash', 'bin');
-  const uvPath = process.platform === 'win32'
-    ? path.join(uvDir, 'uv.exe')
-    : path.join(uvDir, 'uv');
 
-  // If app-installed uv exists, use it
-  if (fs.existsSync(uvPath)) {
-    return uvPath;
+  if (process.platform === 'win32') {
+    // On Windows, prefer uvw.exe (no console window)
+    const uvwPath = path.join(uvDir, 'uvw.exe');
+    if (fs.existsSync(uvwPath)) {
+      return uvwPath;
+    }
+
+    // Fall back to uv.exe if uvw not available
+    const uvPath = path.join(uvDir, 'uv.exe');
+    if (fs.existsSync(uvPath)) {
+      return uvPath;
+    }
+
+    // System PATH: try uvw first, then uv
+    return 'uvw';
+  } else {
+    // macOS/Linux: use standard uv
+    const uvPath = path.join(uvDir, 'uv');
+    if (fs.existsSync(uvPath)) {
+      return uvPath;
+    }
+    return 'uv';
   }
-
-  // Otherwise use system PATH uv
-  return 'uv';
 }
 
 /**

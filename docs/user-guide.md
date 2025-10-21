@@ -183,6 +183,20 @@ The main screen shows all your installed applications with:
 3. The app gracefully shuts down
 4. Status returns to **"Ready"**
 
+### Windows: Terminal Window Behavior
+
+**Note for Windows Users**: When running Python applications on Windows, a black terminal window may appear alongside the UV Dash interface. This is due to technical limitations in how Windows handles background processes.
+
+**Important Information**:
+- **Keep It Minimized**: We recommend minimizing the terminal window instead of closing it
+- **Don't Close It**: Closing the terminal window (clicking the X button) will stop your application, equivalent to clicking the "Stop" button in UV Dash
+- **Normal Behavior**: This is expected behavior on Windows and does not indicate an error
+- **Application Still Works**: Your application functions normally despite the visible terminal window
+
+**Why This Happens**: Windows requires visible console windows for certain types of background processes, and completely hiding them would prevent proper process management and logging.
+
+**Best Practice**: Simply minimize the terminal window to the taskbar and continue using UV Dash normally.
+
 ### Editing App Settings
 
 Click the **Edit** button (pencil icon) to modify:
