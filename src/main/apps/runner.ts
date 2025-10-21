@@ -594,6 +594,8 @@ export async function runApp(
           stdio: ['ignore', logFd, logFd],
           detached: true,
           windowsHide: true,
+          windowsVerbatimArguments: false,
+          shell: false,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',
@@ -622,6 +624,8 @@ export async function runApp(
           stdio: ['ignore', logFd, logFd],
           detached: true,
           windowsHide: true,
+          windowsVerbatimArguments: false,
+          shell: false,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',

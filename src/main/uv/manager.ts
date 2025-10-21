@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
+import { loadSettings, saveSettings } from '../storage/settings';
 
 const execAsync = promisify(exec);
 
@@ -298,6 +299,12 @@ export async function installPythonVersion(
     }
 
     onProgress?.(`Python ${version} installed and set as default`);
+
+    // Save default Python version to settings
+    const settings = loadSettings();
+    settings.defaultPythonVersion = version;
+    saveSettings(settings);
+
     return { success: true };
   } catch (error) {
     return {

@@ -10,6 +10,8 @@ export async function isGitInstalled(): Promise<boolean> {
     const proc = spawn(command, ['git'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      windowsVerbatimArguments: false,
+      shell: false,
     });
 
     proc.on('close', (code) => {
@@ -30,6 +32,8 @@ export async function getGitVersion(): Promise<string | null> {
     const proc = spawn('git', ['--version'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      windowsVerbatimArguments: false,
+      shell: false,
     });
 
     let stdout = '';

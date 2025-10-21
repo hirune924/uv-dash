@@ -17,6 +17,8 @@ function spawnAsync(
       ...options,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      windowsVerbatimArguments: false,
+      shell: false,
     });
 
     let stdout = '';
@@ -269,10 +271,19 @@ async function runUvSync(
 
     onLog('Running uv sync...');
 
-    const uvProcess = spawn(getUvCommand(), ['sync'], {
+    // Build uv sync command with optional Python version
+    const syncArgs = ['sync'];
+    const settings = loadSettings();
+    const pythonVersion = settings.defaultPythonVersion || '3.13'; // Default to 3.13 if not set
+    syncArgs.push('--python', pythonVersion);
+    onLog(`Using Python ${pythonVersion}`);
+
+    const uvProcess = spawn(getUvCommand(), syncArgs, {
       cwd: installPath,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      windowsVerbatimArguments: false,
+      shell: false,
     });
 
     uvProcess.stdout?.on('data', (data) => {

@@ -4,6 +4,7 @@ import * as os from 'os';
 
 export interface Settings {
   appsDirectory?: string; // Custom apps directory path
+  defaultPythonVersion?: string; // Default Python version (e.g., "3.12")
 }
 
 // Path to settings file
