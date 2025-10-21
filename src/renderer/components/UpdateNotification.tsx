@@ -16,41 +16,37 @@ export function UpdateNotification() {
   useEffect(() => {
     // Subscribe to update events
     const unsubChecking = window.electronAPI.onUpdateChecking(() => {
+      // Don't show notification while checking - too intrusive
       setUpdateState({ type: 'checking' });
-      setIsVisible(true);
     });
 
     const unsubAvailable = window.electronAPI.onUpdateAvailable((info) => {
+      // Show notification when update is available
       setUpdateState({ type: 'available', info });
       setIsVisible(true);
     });
 
     const unsubNotAvailable = window.electronAPI.onUpdateNotAvailable(() => {
-      // Automatically hide after a short delay
-      setTimeout(() => {
-        setIsVisible(false);
-        setUpdateState({ type: 'idle' });
-      }, 2000);
+      // No notification needed - silently reset
+      setUpdateState({ type: 'idle' });
     });
 
     const unsubDownloading = window.electronAPI.onUpdateDownloading((progress) => {
+      // Show notification during download
       setUpdateState({ type: 'downloading', progress });
       setIsVisible(true);
     });
 
     const unsubDownloaded = window.electronAPI.onUpdateDownloaded((info) => {
+      // Show notification when ready to install
       setUpdateState({ type: 'ready', info });
       setIsVisible(true);
     });
 
     const unsubError = window.electronAPI.onUpdateError((error) => {
-      setUpdateState({ type: 'error', message: error.message });
-      setIsVisible(true);
-      // Automatically hide error after 5 seconds
-      setTimeout(() => {
-        setIsVisible(false);
-        setUpdateState({ type: 'idle' });
-      }, 5000);
+      // Don't show error notification - just log it
+      console.error('[Update Error]', error.message);
+      setUpdateState({ type: 'idle' });
     });
 
     // Cleanup

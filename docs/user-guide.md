@@ -122,7 +122,7 @@ After clicking **"Install"**, UV Dash will:
 1. **Download/Copy Source**: Get the application files
 2. **Extract (if ZIP)**: Unzip and process the archive
 3. **Read Configuration**: Check `pyproject.toml` for app metadata
-4. **Create Virtual Environment**: Run `uv sync --frozen` to install dependencies
+4. **Create Virtual Environment**: Run `uv sync --python X.Y` to install dependencies with the configured Python version
 5. **Mark as Ready**: App is now ready to run
 
 <div align="center">
@@ -476,6 +476,31 @@ Keep UV up to date with the latest features and bug fixes:
 - No restart required
 
 **Recommendation**: Update UV every few weeks to get the latest improvements.
+
+#### Default Python Version
+
+Control which Python version is used for all applications by default:
+
+1. Go to **Settings** → **Advanced Settings**
+2. Expand **"Default Python Version"**
+3. Select a Python version from the dropdown (e.g., 3.13, 3.12, 3.11)
+4. Click **"Set as Default"**
+5. Wait for the installation to complete
+
+**What happens**:
+- UV Dash runs `uv python install X.Y --default`
+- The selected version is downloaded and set as the default for UV
+- All new application installations will use this Python version with `uv sync --python X.Y`
+- Existing applications are not affected until they are reinstalled
+
+**Default behavior**:
+- If no version is selected, Python 3.13 is used by default
+- This ensures compatibility with most modern Python projects
+
+**Use cases**:
+- Testing applications with specific Python versions
+- Avoiding compatibility issues with newer Python releases
+- Matching your development environment's Python version
 
 ### Data Storage
 

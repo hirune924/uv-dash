@@ -120,6 +120,12 @@ export function LogsView({ logs, apps }: LogsViewProps) {
     return Array.from(ids).sort();
   }, [logs]);
 
+  // Helper function to get app name from ID
+  const getAppName = (appId: string): string => {
+    const app = apps.find(a => a.id === appId);
+    return app ? app.name : appId;
+  };
+
   // Filtered logs
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -219,7 +225,7 @@ export function LogsView({ logs, apps }: LogsViewProps) {
               <option value="all">All Apps ({appIds.length})</option>
               {appIds.map((id) => (
                 <option key={id} value={id}>
-                  {id}
+                  {getAppName(id)}
                 </option>
               ))}
             </select>
@@ -481,7 +487,7 @@ export function LogsView({ logs, apps }: LogsViewProps) {
               >
                 [{log.level.toUpperCase()}]
               </span>{' '}
-              <span className="text-accent-blue font-medium">[{log.appId}]</span>{' '}
+              <span className="text-accent-blue font-medium">[{getAppName(log.appId)}]</span>{' '}
               <span className="text-text-primary">{log.message}</span>
             </div>
           ))
