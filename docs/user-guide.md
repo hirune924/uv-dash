@@ -259,16 +259,30 @@ In the main **Apps** view, each running application displays:
 
 ## Managing Secrets
 
-UV Dash provides secure storage for API keys, passwords, and other sensitive data.
+UV Dash provides three types of secure storage for API keys, passwords, and other sensitive data:
+
+1. **Global Secrets**: Shared secrets that can be used across multiple applications
+2. **App-Specific Encrypted Secrets**: Encrypted secrets stored per-application
+3. **Plain Text Environment Variables**: Non-sensitive configuration variables
+
+### Overview of Secret Types
+
+| Type | Encryption | Scope | Use Case |
+|------|-----------|-------|----------|
+| **Global Secrets** | ✅ Yes | All apps | API keys shared across projects (e.g., OpenAI API key) |
+| **Encrypted Secrets** | ✅ Yes | Single app | App-specific sensitive data (e.g., database password) |
+| **Plain Text Env Vars** | ❌ No | Single app | Non-sensitive config (e.g., `DEBUG=true`) |
+
+All encrypted secrets use Electron's `safeStorage` API with OS-level keychains (macOS Keychain, Windows Credential Manager, Linux Secret Service).
+
+### Global Secrets
+
+Global secrets are stored centrally and can be shared across multiple applications. Each app can reference the same secret using its own environment variable name.
 
 <div align="center">
   <img src="../assets/screenshot-setting.png" alt="Settings View" width="700"/>
   <p><em>Settings view with Global Secrets management</em></p>
 </div>
-
-### Global Secrets
-
-Global secrets are available to all applications as environment variables.
 
 #### Adding a Global Secret
 
@@ -279,38 +293,89 @@ Global secrets are available to all applications as environment variables.
 
 1. Click the **"Settings"** tab
 2. Scroll to **"Global Secrets"** section
-3. Click **"Add Secret"**
+3. Click **"+ Add Secret"**
 4. Enter:
-   - **Key**: Environment variable name (e.g., `OPENAI_API_KEY`)
+   - **Name**: A descriptive name (e.g., `OpenAI API Key`)
    - **Value**: The secret value (e.g., `sk-...`)
-5. Click **"Save"**
+   - **Description (optional)**: Additional notes about the secret
+5. Click **"Create"**
 
-The secret is immediately available to all running apps as an environment variable.
+#### Using Global Secrets in Apps
 
-#### Editing/Deleting Secrets
-
-- **Edit**: Click the pencil icon, modify the value, and save
-- **Delete**: Click the trash icon and confirm
-
-### App-Specific Environment Variables
-
-For non-sensitive configuration, use app-specific environment variables:
+After creating a global secret, you can reference it in any application:
 
 <div align="center">
   <img src="../assets/screenshot-edit-envvariables.png" alt="Edit Environment Variables" width="600"/>
-  <p><em>App-specific environment variables in Edit modal</em></p>
+  <p><em>App-specific environment variables with secret type selection</em></p>
 </div>
 
 1. Click the **Edit** button on an app
 2. Scroll to **"Environment Variables"** section
-3. Add key-value pairs (e.g., `DEBUG=true`)
-4. Click **"Save"**
+3. Click **"+ Add Variable"**
+4. Enter the environment variable name (e.g., `OPENAI_API_KEY`)
+5. Select **"📦 Global Secret"** from the dropdown
+6. Choose the global secret from the list (e.g., `OpenAI API Key`)
+7. Click **"Save"**
 
-### Security
+**Example**: You can use the same "OpenAI API Key" global secret in multiple apps:
+- App A: `OPENAI_API_KEY` → OpenAI API Key
+- App B: `API_KEY` → OpenAI API Key
+- App C: `OPENAI_SECRET` → OpenAI API Key
 
-- **Encryption**: All secrets are encrypted using Electron's `safeStorage` API
-- **OS-Level Security**: Uses system keychains (macOS Keychain, Windows Credential Manager, Linux Secret Service)
+Each app accesses it with its own environment variable name.
+
+#### Editing/Deleting Global Secrets
+
+- **Edit**: Click the **Edit** button next to a secret
+  - You can update the **Name**, **Value**, or **Description**
+  - Leave the **Value** field empty to keep the current encrypted value
+- **Delete**: Click the **Delete** button
+  - You'll see a warning if any apps are using this secret
+  - Deleting removes the secret from all apps using it
+
+### App-Specific Encrypted Secrets
+
+For sensitive data that's only used by one application, use encrypted secrets:
+
+1. Click the **Edit** button on an app
+2. Scroll to **"Environment Variables"** section
+3. Click **"+ Add Variable"**
+4. Enter the environment variable name (e.g., `DATABASE_PASSWORD`)
+5. Select **"🔒 Encrypted Secret"** from the dropdown
+6. Enter the secret value
+7. Click **"Save"**
+
+**Key Differences from Global Secrets**:
+- Stored **per-application** (not shared)
+- No need to create a separate global secret first
+- Encrypted using the same OS keychain mechanism
+- Cannot be reused by other applications
+
+### Plain Text Environment Variables
+
+For non-sensitive configuration:
+
+1. Click the **Edit** button on an app
+2. Scroll to **"Environment Variables"** section
+3. Click **"+ Add Variable"**
+4. Enter the environment variable name (e.g., `DEBUG`)
+5. Select **"Plain Text"** from the dropdown (default)
+6. Enter the value (e.g., `true`)
+7. Click **"Save"**
+
+**Use for**:
+- Debug flags
+- Log levels
+- Feature toggles
+- Port numbers
+- Any non-sensitive configuration
+
+### Security Notes
+
 - **Never Logged**: Secret values never appear in logs or error messages
+- **OS-Level Encryption**: All encrypted secrets use system keychains
+- **Access Control**: Secrets are only accessible while UV Dash is running
+- **No Plain Text Files**: Encrypted secrets are never written to disk unencrypted
 
 ## Settings and Configuration
 
@@ -325,9 +390,78 @@ UV Dash supports English and Japanese:
 
 ### UV Management
 
-- **Check Installation**: Settings shows if `uv` is installed and its version
-- **Install UV**: If not installed, click **"Install uv"** button
-- **Upgrade UV**: Manually upgrade by running `curl -LsSf https://astral.sh/uv/install.sh | sh` in terminal
+In the **Settings** tab, you can manage your UV installation:
+
+- **Check Status**: The "UV Status" section shows if `uv` is installed and ready
+- **Install UV**: If not installed, click the **"Install UV"** button
+  - UV Dash will automatically download and install UV for you
+  - If automatic installation fails, you'll see instructions for manual installation
+- **Update UV**: Keep UV up to date with the latest features and bug fixes
+  - Go to **Settings** → **Advanced Settings** → **Update UV**
+  - Click the **"Update UV"** button
+  - UV Dash runs `uv self update` to upgrade to the latest version
+  - The update process takes a few seconds
+
+### Advanced Settings
+
+Advanced Settings are accessible in the **Settings** tab by expanding the "Advanced Settings" section.
+
+#### Cleanup Orphaned Directories
+
+Over time, failed installations or interrupted operations can leave behind unused directories. Use this feature to clean them up:
+
+1. Go to **Settings** → **Advanced Settings**
+2. Expand **"Cleanup Orphaned Directories"**
+3. Click **"Cleanup Now"**
+4. Confirm the cleanup action
+5. UV Dash will remove all directories in the apps folder that are not registered in your app list
+
+**When to use**:
+- After multiple failed installation attempts
+- When you notice high disk usage in the UV Dash directory
+- As periodic maintenance (e.g., monthly)
+
+**Safe operation**: Only directories not associated with any registered app are deleted. Your active applications are never affected.
+
+#### Apps Installation Directory
+
+By default, UV Dash installs applications in your home directory (`~/.uvdash/apps/`). You can change this location:
+
+1. Go to **Settings** → **Advanced Settings**
+2. Expand **"Apps Installation Directory"**
+3. View the current directory path
+4. **Option A - Browse**: Click **"Browse"** to select a new directory
+5. **Option B - Manual**: Enter the full path directly
+6. Click **"Save"** to apply the change
+
+**Important notes**:
+- Changing the directory does **not** move existing applications
+- New installations will use the new directory
+- Ensure the new directory has sufficient disk space
+- The path must be writable by UV Dash
+
+**Use cases**:
+- Moving installations to a drive with more space
+- Organizing applications in a specific location
+- Storing apps on a faster SSD
+
+#### Update UV
+
+Keep UV up to date with the latest features and bug fixes:
+
+1. Go to **Settings** → **Advanced Settings**
+2. Expand **"Update UV"**
+3. Click **"Update UV"**
+4. Wait for the update to complete (usually 5-10 seconds)
+5. A success message confirms the update
+
+**What happens**:
+- UV Dash runs `uv self update` with `UV_NO_MODIFY_PATH=1`
+- UV is updated to the latest stable version
+- Your existing applications and settings are not affected
+- No restart required
+
+**Recommendation**: Update UV every few weeks to get the latest improvements.
 
 ### Data Storage
 

@@ -67,9 +67,10 @@ https://github.com/user-attachments/assets/da3856a4-d110-4fae-81df-f32976570745
 
 | プラットフォーム | ダウンロード |
 |----------|----------|
-| **macOS** | [UV-Dash-x.x.x-arm64.dmg](https://github.com/hirune924/uv-dash/releases) |
-| **Windows** | [UV-Dash-Setup-x.x.x.exe](https://github.com/hirune924/uv-dash/releases) |
-| **Linux** | [UV-Dash-x.x.x.AppImage](https://github.com/hirune924/uv-dash/releases) |
+| **macOS (Apple Silicon)** | [UV.Dash-arm64.dmg](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0-arm64.dmg) |
+| **macOS (Intel)** | [UV.Dash.dmg](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0.dmg) |
+| **Windows** | [UV.Dash.Setup.exe](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash.Setup.0.1.0.exe) |
+| **Linux** | [UV.Dash.AppImage](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0.AppImage) |
 
 **必要要件**: macOS 13以上 / Windows 10以上 / Ubuntu LTS
 

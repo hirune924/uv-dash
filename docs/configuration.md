@@ -260,46 +260,91 @@ scheduler = "python scheduler.py"
 
 ### Types of Environment Variables
 
-#### 1. Global Secrets (Encrypted)
+UV Dash provides multiple ways to manage environment variables, each suited for different use cases:
 
-For sensitive data like API keys:
+#### 1. App-Specific Plain Text Variables
 
-- Stored encrypted in UV Dash
-- Available to **all applications**
-- Set in **Settings → Global Secrets**
+For non-sensitive configuration specific to one application:
 
-**Examples**:
-```bash
-OPENAI_API_KEY=sk-...
-DATABASE_PASSWORD=secret123
-AWS_SECRET_ACCESS_KEY=...
-```
-
-#### 2. App-Specific Variables
-
-For non-sensitive configuration:
-
-- Stored per-application
-- Set in **Edit App → Environment Variables**
+- **Source**: Set in **Edit App → Environment Variables → Plain Text**
+- **Storage**: Unencrypted, stored in app metadata
+- **Scope**: Single application only
+- **Best for**: Debug flags, log levels, feature toggles, port numbers
 
 **Examples**:
 ```bash
 DEBUG=true
 LOG_LEVEL=info
 MAX_WORKERS=4
+PORT=8000
 ```
 
-#### 3. Project .env Files
+**How to set**:
+1. Edit an app
+2. Add variable with **"Plain Text"** type
+3. Enter name and value
 
-UV Dash respects `.env` files in your project:
+#### 2. App-Specific Encrypted Secrets
+
+For sensitive data used by only one application:
+
+- **Source**: Set in **Edit App → Environment Variables → 🔒 Encrypted Secret**
+- **Storage**: Encrypted using OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service)
+- **Scope**: Single application only
+- **Best for**: Database passwords, app-specific API keys, auth tokens
+
+**Examples**:
+```bash
+DATABASE_PASSWORD=secret123
+APP_SECRET_KEY=xyz789
+STRIPE_SECRET_KEY=sk_test_...
+```
+
+**How to set**:
+1. Edit an app
+2. Add variable with **"🔒 Encrypted Secret"** type
+3. Enter name and secret value
+4. Value is immediately encrypted
+
+#### 3. Global Secret References
+
+For sensitive data shared across multiple applications:
+
+- **Source**: Set in **Settings → Global Secrets**, then referenced in **Edit App → Environment Variables → 📦 Global Secret**
+- **Storage**: Encrypted centrally, each app references it by ID
+- **Scope**: Available to all applications (each app assigns its own environment variable name)
+- **Best for**: Shared API keys (OpenAI, AWS, etc.), organization secrets
+
+**Example workflow**:
+
+1. **Create global secret** (Settings):
+   - Name: `OpenAI API Key`
+   - Value: `sk-proj-...` (encrypted)
+
+2. **Reference in App A**:
+   - Variable name: `OPENAI_API_KEY`
+   - Type: **📦 Global Secret**
+   - Select: `OpenAI API Key`
+
+3. **Reference in App B**:
+   - Variable name: `API_KEY`
+   - Type: **📦 Global Secret**
+   - Select: `OpenAI API Key`
+
+Both apps access the same encrypted secret with different environment variable names.
+
+#### 4. Project .env Files
+
+UV Dash respects `.env` files in your project root:
 
 ```bash
 # .env
 DATABASE_URL=sqlite:///./db.sqlite3
 REDIS_URL=redis://localhost:6379
+API_TIMEOUT=30
 ```
 
-**Loading .env**: Use a library like `python-dotenv`:
+**Loading .env files**: Use a library like `python-dotenv`:
 
 ```toml
 [project]
@@ -308,7 +353,21 @@ dependencies = ["python-dotenv"]
 
 ```python
 from dotenv import load_dotenv
-load_dotenv()
+import os
+
+load_dotenv()  # Load .env file
+database_url = os.getenv("DATABASE_URL")
+```
+
+**Note**: `.env` files are loaded by your Python code, not by UV Dash. They provide a fallback for variables not set in UV Dash.
+
+#### 5. System Environment Variables
+
+Standard system environment variables are also available:
+
+```bash
+HOME=/Users/username
+PATH=/usr/local/bin:/usr/bin
 ```
 
 ### Accessing Environment Variables
@@ -318,22 +377,50 @@ In your Python code:
 ```python
 import os
 
-# Get environment variable
+# Get environment variable with optional default
 api_key = os.getenv("OPENAI_API_KEY")
-debug = os.getenv("DEBUG", "false")  # with default
+debug = os.getenv("DEBUG", "false")  # default to "false" if not set
 
-# Or use os.environ
-database_url = os.environ["DATABASE_URL"]  # raises KeyError if not set
+# Or use os.environ (raises KeyError if not set)
+database_url = os.environ["DATABASE_URL"]
+
+# Check if variable exists
+if "API_KEY" in os.environ:
+    api_key = os.environ["API_KEY"]
 ```
 
 ### Priority Order
 
-When the same variable is defined in multiple places:
+When the same environment variable is defined in multiple places, UV Dash uses this priority order (highest to lowest):
 
-1. **App-Specific Environment Variables** (highest priority)
-2. **Global Secrets**
-3. **Project .env file**
-4. **System environment variables** (lowest priority)
+1. **App-Specific Plain Text Variables** - Highest priority
+2. **App-Specific Encrypted Secrets** - Takes precedence over global secrets
+3. **Global Secret References** - Shared secrets
+4. **Project .env File** - Loaded by your application code (if using `python-dotenv`)
+5. **System Environment Variables** - Lowest priority
+
+**Example**:
+
+If `OPENAI_API_KEY` is defined in multiple places:
+```
+Plain Text: OPENAI_API_KEY=test-key          → Used (highest priority)
+Encrypted Secret: OPENAI_API_KEY=secret-key  → Ignored
+Global Secret: OPENAI_API_KEY → OpenAI Key   → Ignored
+.env file: OPENAI_API_KEY=env-key            → Ignored
+System: OPENAI_API_KEY=system-key            → Ignored
+```
+
+**Best Practice**: Use only one source per variable to avoid confusion.
+
+### Choosing the Right Type
+
+| Scenario | Recommended Type | Reason |
+|----------|-----------------|---------|
+| Shared API key (OpenAI, AWS) | **Global Secret Reference** | One encrypted value, multiple apps |
+| App-specific database password | **App-Specific Encrypted Secret** | Single app, needs encryption |
+| Debug flag or log level | **App-Specific Plain Text** | Non-sensitive, quick to change |
+| Development database URL | **Project .env File** | Version controlled with project |
+| CI/CD secrets | **System Environment Variables** | Provided by deployment environment |
 
 ## Port Configuration
 

@@ -67,9 +67,10 @@ Download the latest version for your platform:
 
 | Platform | Download |
 |----------|----------|
-| **macOS** | [UV-Dash-x.x.x-arm64.dmg](https://github.com/hirune924/uv-dash/releases) |
-| **Windows** | [UV-Dash-Setup-x.x.x.exe](https://github.com/hirune924/uv-dash/releases) |
-| **Linux** | [UV-Dash-x.x.x.AppImage](https://github.com/hirune924/uv-dash/releases) |
+| **macOS (Apple Silicon)** | [UV.Dash-arm64.dmg](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0-arm64.dmg) |
+| **macOS (Intel)** | [UV.Dash.dmg](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0.dmg) |
+| **Windows** | [UV.Dash.Setup.exe](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash.Setup.0.1.0.exe) |
+| **Linux** | [UV.Dash.AppImage](https://github.com/hirune924/uv-dash/releases/latest/download/UV.Dash-0.1.0.AppImage) |
 
 **Requirements**: macOS 13+ / Windows 10+ / Ubuntu LTS
 
