@@ -104,21 +104,35 @@ const STATS_MONITORING_INTERVAL_MS = 5000; // Every 5 seconds
 
 /**
  * Get uv command path (prioritize app-installed version, fallback to system PATH)
+ * On Windows, use uvw.exe to prevent console window from appearing
  */
 function getUvCommand(): string {
   const homeDir = os.homedir();
   const uvDir = path.join(homeDir, '.uvdash', 'bin');
-  const uvPath = process.platform === 'win32'
-    ? path.join(uvDir, 'uv.exe')
-    : path.join(uvDir, 'uv');
 
-  // If app-installed uv exists, use it
-  if (fs.existsSync(uvPath)) {
-    return uvPath;
+  if (process.platform === 'win32') {
+    // On Windows, prefer uvw.exe (no console window)
+    const uvwPath = path.join(uvDir, 'uvw.exe');
+    if (fs.existsSync(uvwPath)) {
+      return uvwPath;
+    }
+
+    // Fall back to uv.exe if uvw not available
+    const uvPath = path.join(uvDir, 'uv.exe');
+    if (fs.existsSync(uvPath)) {
+      return uvPath;
+    }
+
+    // System PATH: try uvw first, then uv
+    return 'uvw';
+  } else {
+    // macOS/Linux: use standard uv
+    const uvPath = path.join(uvDir, 'uv');
+    if (fs.existsSync(uvPath)) {
+      return uvPath;
+    }
+    return 'uv';
   }
-
-  // Otherwise use system PATH uv
-  return 'uv';
 }
 
 /**
@@ -593,6 +607,9 @@ export async function runApp(
           cwd: installPath,
           stdio: ['ignore', logFd, logFd],
           detached: true,
+          windowsHide: true,
+          windowsVerbatimArguments: false,
+          shell: false,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',
@@ -620,6 +637,9 @@ export async function runApp(
           cwd: installPath,
           stdio: ['ignore', logFd, logFd],
           detached: true,
+          windowsHide: true,
+          windowsVerbatimArguments: false,
+          shell: false,
           env: {
             ...process.env,
             PYTHONUNBUFFERED: '1',
@@ -639,6 +659,7 @@ export async function runApp(
     }
 
     const uvCmd = getUvCommand();
+    onLog(`[DEBUG] Using UV command: ${uvCmd}`);
 
     // Create log file for this app
     const logsDir = getLogsDir();
@@ -650,6 +671,7 @@ export async function runApp(
       cwd: installPath,
       stdio: ['ignore', logFd, logFd],
       detached: true,
+      windowsHide: true,
       env: {
         ...process.env,
         PYTHONUNBUFFERED: '1',

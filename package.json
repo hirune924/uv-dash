@@ -1,7 +1,7 @@
 {
   "name": "uv-dash",
   "version": "0.1.0",
-  "description": "Electron + uv desktop client for running Python applications",
+  "description": "Python application launcher powered by uv",
   "main": "dist/main/index.js",
   "author": "hirune924 <nori.o920924@outlook.jp>",
   "license": "MIT",
@@ -87,14 +87,24 @@
           ]
         }
       ],
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "artifactName": "UV.Dash-${version}-${arch}.${ext}"
     },
     "win": {
       "icon": "build/icons/icon.ico",
       "target": [
-        "nsis",
-        "zip"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
       ]
+    },
+    "nsis": {
+      "artifactName": "UV.Dash.Setup.${version}.${ext}"
     },
     "linux": {
       "icon": "build/icons/512x512.png",
@@ -102,7 +112,8 @@
         "AppImage",
         "deb"
       ],
-      "category": "Development"
+      "category": "Development",
+      "artifactName": "UV.Dash-${version}.${ext}"
     }
   }
 }

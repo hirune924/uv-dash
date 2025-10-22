@@ -36,7 +36,10 @@
     "title": "UVステータス",
     "installed": "UVはインストール済みで準備完了です",
     "not_installed": "UVがインストールされていません",
+    "installing": "UVをインストール中...",
+    "installing_description": "数分かかる場合があります。お待ちください...",
     "install_button": "UVをインストール",
+    "install_button_loading": "インストール中...",
     "error_title": "⚠️ 自動インストールに失敗しました",
     "error_manual": "公式インストールガイドに従って手動でUVをインストールしてください:",
     "error_guide_button": "📖 インストールガイドを開く"
@@ -70,6 +73,19 @@
       "button_loading": "アップデート中...",
       "success": "UVが正常にアップデートされました",
       "error": "UVのアップデートに失敗しました: {{error}}"
+    },
+    "python_version": {
+      "title": "デフォルトPythonバージョン",
+      "description": "UVのデフォルトPythonバージョンを設定します。特に指定がない限り、すべてのアプリケーションで使用されます。",
+      "button": "デフォルトに設定",
+      "button_loading": "インストール中...",
+      "loading": "読み込み中...",
+      "no_versions": "利用可能なバージョンがありません",
+      "confirm": "Python {{version}}をインストールしてデフォルトに設定します。続行しますか？",
+      "success": "Python {{version}}がインストールされ、デフォルトに設定されました",
+      "error": "Pythonのインストールに失敗しました: {{error}}",
+      "error_no_version": "Pythonバージョンを選択してください",
+      "note": "UVは選択したPythonバージョンがインストールされていない場合、自動的にインストールします。"
     }
   },
   "about": {

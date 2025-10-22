@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
+import { loadSettings, saveSettings } from '../storage/settings';
 
 const execAsync = promisify(exec);
 
@@ -218,4 +219,97 @@ export async function runUvCommand(args: string[]): Promise<{ stdout: string; st
 
   const { stdout, stderr } = await execAsync(`"${command}" ${args.join(' ')}`);
   return { stdout, stderr };
+}
+
+// List available Python versions
+export async function listPythonVersions(
+  onProgress?: (message: string) => void
+): Promise<{ success: boolean; versions?: string[]; error?: string }> {
+  try {
+    onProgress?.('Fetching available Python versions...');
+    const uvPath = getUvPath();
+    const command = fs.existsSync(uvPath) ? uvPath : 'uv';
+
+    const result = await execAsync(`"${command}" python list`, {
+      timeout: 30000,
+    });
+
+    if (result.stdout) {
+      onProgress?.(`stdout: ${result.stdout}`);
+    }
+
+    // Parse output to extract version numbers
+    // Expected format: "cpython-3.13.0-..." or similar
+    const lines = result.stdout.split('\n');
+    const versions: string[] = [];
+    const versionSet = new Set<string>();
+
+    for (const line of lines) {
+      // Match patterns like "cpython-3.13.0", "3.13", etc.
+      const match = line.match(/(\d+\.\d+)(?:\.\d+)?/);
+      if (match && match[1]) {
+        const version = match[1]; // e.g., "3.13"
+        if (!versionSet.has(version)) {
+          versionSet.add(version);
+          versions.push(version);
+        }
+      }
+    }
+
+    // Sort versions in descending order (newest first)
+    versions.sort((a, b) => {
+      const [aMajor, aMinor] = a.split('.').map(Number);
+      const [bMajor, bMinor] = b.split('.').map(Number);
+      if (aMajor !== bMajor) return bMajor - aMajor;
+      return bMinor - aMinor;
+    });
+
+    return { success: true, versions };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to list Python versions: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+// Install Python version and set as default
+export async function installPythonVersion(
+  version: string,
+  onProgress?: (message: string) => void
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    onProgress?.(`Installing Python ${version} and setting as default...`);
+    const uvPath = getUvPath();
+    const command = fs.existsSync(uvPath) ? uvPath : 'uv';
+
+    const result = await execAsync(`"${command}" python install ${version} --default`, {
+      timeout: 300000, // 5 minutes for installation
+      env: {
+        ...process.env,
+        UV_NO_MODIFY_PATH: '1',
+      },
+    });
+
+    if (result.stdout) {
+      onProgress?.(`stdout: ${result.stdout}`);
+    }
+    if (result.stderr) {
+      onProgress?.(`stderr: ${result.stderr}`);
+    }
+
+    onProgress?.(`Python ${version} installed and set as default`);
+
+    // Save default Python version to settings
+    const settings = loadSettings();
+    settings.defaultPythonVersion = version;
+    saveSettings(settings);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to install Python ${version}: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }

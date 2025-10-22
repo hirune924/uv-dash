@@ -91,6 +91,8 @@ const electronAPI: ElectronAPI = {
   checkUv: () => ipcRenderer.invoke('check-uv'),
   installUv: () => ipcRenderer.invoke('install-uv'),
   updateUv: () => ipcRenderer.invoke('update-uv'),
+  listPythonVersions: () => ipcRenderer.invoke('list-python-versions'),
+  installPythonVersion: (version) => ipcRenderer.invoke('install-python-version', version),
 
   // Git management
   checkGit: () => ipcRenderer.invoke('check-git'),

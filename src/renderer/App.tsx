@@ -13,6 +13,7 @@ export function App() {
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [uvInstalled, setUvInstalled] = useState(false);
+  const [uvInstalling, setUvInstalling] = useState(false);
   const [uvInstallError, setUvInstallError] = useState<string | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [currentView, setCurrentView] = useState<View>('apps');
@@ -59,13 +60,19 @@ export function App() {
   }, []);
 
   const handleInstallUv = async () => {
-    const result = await window.electronAPI.installUv();
-    if (!result.success) {
-      setUvInstallError(result.error || 'Installation failed');
-    } else {
-      setUvInstallError(null);
+    setUvInstalling(true);
+    setUvInstallError(null);
+    try {
+      const result = await window.electronAPI.installUv();
+      if (!result.success) {
+        setUvInstallError(result.error || 'Installation failed');
+      } else {
+        setUvInstallError(null);
+      }
+      await checkUvStatus();
+    } finally {
+      setUvInstalling(false);
     }
-    await checkUvStatus();
   };
 
   return (
@@ -74,6 +81,7 @@ export function App() {
         currentView={currentView}
         onViewChange={setCurrentView}
         uvInstalled={uvInstalled}
+        uvInstalling={uvInstalling}
         onInstallUv={handleInstallUv}
         appsCount={apps.length}
       />
@@ -103,7 +111,7 @@ export function App() {
         <div className="flex-1 overflow-auto p-6">
           {currentView === 'apps' && <AppsView apps={apps} onUpdate={loadApps} />}
           {currentView === 'logs' && <LogsView logs={logs} apps={apps} />}
-          {currentView === 'settings' && <SettingsView uvInstalled={uvInstalled} uvInstallError={uvInstallError} onInstallUv={handleInstallUv} />}
+          {currentView === 'settings' && <SettingsView uvInstalled={uvInstalled} uvInstalling={uvInstalling} uvInstallError={uvInstallError} onInstallUv={handleInstallUv} />}
         </div>
       </main>
 

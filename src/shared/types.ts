@@ -138,6 +138,8 @@ export interface ElectronAPI {
   checkUv: () => Promise<{ installed: boolean; version?: string }>;
   installUv: () => Promise<{ success: boolean; error?: string }>;
   updateUv: () => Promise<{ success: boolean; error?: string }>;
+  listPythonVersions: () => Promise<{ success: boolean; versions?: string[]; error?: string }>;
+  installPythonVersion: (version: string) => Promise<{ success: boolean; error?: string }>;
 
   // Git management
   checkGit: () => Promise<boolean>;

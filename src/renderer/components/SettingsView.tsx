@@ -4,11 +4,12 @@ import type { GlobalSecret } from '../../shared/types';
 
 interface SettingsViewProps {
   uvInstalled: boolean;
+  uvInstalling: boolean;
   uvInstallError: string | null;
   onInstallUv: () => void;
 }
 
-export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: SettingsViewProps) {
+export function SettingsView({ uvInstalled, uvInstalling, uvInstallError, onInstallUv }: SettingsViewProps) {
   const { t, i18n } = useTranslation('settings');
   const [secrets, setSecrets] = useState<GlobalSecret[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -26,6 +27,12 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
   const [directoryLoading, setDirectoryLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
 
+  // Python version state
+  const [pythonVersions, setPythonVersions] = useState<string[]>([]);
+  const [selectedPythonVersion, setSelectedPythonVersion] = useState<string>('3.13');
+  const [pythonVersionLoading, setPythonVersionLoading] = useState(false);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+
   // Load secrets list
   const loadSecrets = async () => {
     const result = await window.electronAPI.listGlobalSecrets();
@@ -38,9 +45,33 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
     setAppsDirectory(dir);
   };
 
+  // Load Python versions
+  const loadPythonVersions = async () => {
+    setLoadingVersions(true);
+    try {
+      const result = await window.electronAPI.listPythonVersions();
+      if (result.success && result.versions) {
+        setPythonVersions(result.versions);
+        // Set default to 3.13 if available, otherwise first version
+        if (result.versions.includes('3.13')) {
+          setSelectedPythonVersion('3.13');
+        } else if (result.versions.length > 0) {
+          setSelectedPythonVersion(result.versions[0]);
+        }
+      } else {
+        console.error('Failed to load Python versions:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading Python versions:', error);
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
   useEffect(() => {
     loadSecrets();
     loadAppsDirectory();
+    loadPythonVersions();
   }, []);
 
   // Reset form
@@ -192,6 +223,32 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
     }
   };
 
+  const handleInstallPythonVersion = async () => {
+    if (!selectedPythonVersion) {
+      alert(t('advanced.python_version.error_no_version'));
+      return;
+    }
+
+    const confirmed = window.confirm(
+      t('advanced.python_version.confirm', { version: selectedPythonVersion })
+    );
+    if (!confirmed) return;
+
+    setPythonVersionLoading(true);
+    try {
+      const result = await window.electronAPI.installPythonVersion(selectedPythonVersion);
+      if (result.success) {
+        alert(t('advanced.python_version.success', { version: selectedPythonVersion }));
+      } else {
+        alert(t('advanced.python_version.error', { error: result.error }));
+      }
+    } catch (error) {
+      alert(`Error: ${error}`);
+    } finally {
+      setPythonVersionLoading(false);
+    }
+  };
+
   return (
     <div>
       {/* Global Secrets Section */}
@@ -270,8 +327,8 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
       <div className="bg-bg-secondary rounded-lg p-5 border border-border mb-4">
         <h3 className="text-sm font-semibold mb-3">{t('uv.title')}</h3>
 
-        {/* Show error message if installation failed */}
-        {uvInstallError && (
+        {/* Show error message if installation failed and UV is not installed */}
+        {!uvInstalled && uvInstallError && (
           <div className="mb-4 p-4 bg-status-error/10 border border-status-error/30 rounded">
             <p className="text-sm text-status-error font-medium mb-2">
               {t('uv.error_title')}
@@ -291,19 +348,35 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
           </div>
         )}
 
+        {/* Show installing message when installation is in progress */}
+        {uvInstalling && (
+          <div className="mb-4 p-4 bg-accent-blue/10 border border-accent-blue/30 rounded">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-accent-blue border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-text-primary font-medium">
+                {t('uv.installing')}
+              </p>
+            </div>
+            <p className="text-xs text-text-secondary mt-2">
+              {t('uv.installing_description')}
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className={`w-2.5 h-2.5 rounded-full ${uvInstalled ? 'bg-status-running' : 'bg-status-error'}`} />
+            <div className={`w-2.5 h-2.5 rounded-full ${uvInstalled ? 'bg-status-running' : uvInstalling ? 'bg-accent-orange' : 'bg-status-error'}`} />
             <span className="text-sm">
-              {uvInstalled ? t('uv.installed') : t('uv.not_installed')}
+              {uvInstalled ? t('uv.installed') : uvInstalling ? t('uv.installing') : t('uv.not_installed')}
             </span>
           </div>
           {!uvInstalled && (
             <button
               onClick={onInstallUv}
-              className="px-4 py-2 bg-accent-blue text-white rounded hover:bg-accent-blue-hover transition-colors"
+              disabled={uvInstalling}
+              className="px-4 py-2 bg-accent-blue text-white rounded hover:bg-accent-blue-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t('uv.install_button')}
+              {uvInstalling ? t('uv.install_button_loading') : t('uv.install_button')}
             </button>
           )}
         </div>
@@ -367,7 +440,7 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
             </div>
 
             {/* Update UV */}
-            <div>
+            <div className="pb-4 border-b border-border">
               <h4 className="text-sm font-medium text-text-primary mb-2">{t('advanced.update_uv.title')}</h4>
               <p className="text-xs text-text-secondary mb-3">
                 {t('advanced.update_uv.description')} <code className="px-1 py-0.5 bg-bg-tertiary rounded font-mono text-xs">uv self update</code>).
@@ -379,6 +452,44 @@ export function SettingsView({ uvInstalled, uvInstallError, onInstallUv }: Setti
               >
                 {updateLoading ? t('advanced.update_uv.button_loading') : t('advanced.update_uv.button')}
               </button>
+            </div>
+
+            {/* Default Python Version */}
+            <div>
+              <h4 className="text-sm font-medium text-text-primary mb-2">{t('advanced.python_version.title')}</h4>
+              <p className="text-xs text-text-secondary mb-3">
+                {t('advanced.python_version.description')}
+              </p>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={selectedPythonVersion}
+                  onChange={(e) => setSelectedPythonVersion(e.target.value)}
+                  disabled={loadingVersions || pythonVersionLoading}
+                  className="px-3 py-2 bg-bg-tertiary border border-border rounded text-text-primary focus:outline-none focus:border-accent-blue text-sm disabled:opacity-50"
+                >
+                  {loadingVersions ? (
+                    <option>{t('advanced.python_version.loading')}</option>
+                  ) : pythonVersions.length === 0 ? (
+                    <option>{t('advanced.python_version.no_versions')}</option>
+                  ) : (
+                    pythonVersions.map((version) => (
+                      <option key={version} value={version}>
+                        Python {version}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  onClick={handleInstallPythonVersion}
+                  disabled={pythonVersionLoading || loadingVersions || pythonVersions.length === 0}
+                  className="px-4 py-2 bg-accent-blue text-white rounded hover:bg-opacity-80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {pythonVersionLoading ? t('advanced.python_version.button_loading') : t('advanced.python_version.button')}
+                </button>
+              </div>
+              <p className="text-xs text-text-tertiary mt-2">
+                {t('advanced.python_version.note')}
+              </p>
             </div>
           </div>
         )}

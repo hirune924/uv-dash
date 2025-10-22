@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="logo/logo.png" alt="UV Dash Logo" width="200"/>
-  <p><strong>A desktop application for easily managing and running Python applications</strong></p>
+  <p><strong>Python application launcher powered by uv</strong></p>
 
   [![Test](https://github.com/hirune924/uv-dash/actions/workflows/test.yml/badge.svg)](https://github.com/hirune924/uv-dash/actions/workflows/test.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,14 +14,14 @@
 
 ## Overview
 
-UV Dash is a desktop application that makes Python development accessible to everyone. Install and run [uv](https://github.com/astral-sh/uv)-managed Python applications with just a few clicks—no terminal or command-line knowledge required.
+UV Dash makes it easy to run and manage Python applications without using the command line. From installation and launch to monitoring and secrets management, everything is handled through the GUI for [uv](https://github.com/astral-sh/uv)-based Python apps and shell scripts.
 
 https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 
 ### Why UV Dash?
 
 - **Zero Command Line** - Complete Python app management through an intuitive GUI
-- **Universal Compatibility** - Works with Streamlit, FastAPI, Flask, Gradio, Django, and more
+- **Universal Compatibility** - Run anything `uv run`/`uv x` can execute (Python apps, shell scripts, custom commands). Major web frameworks (Streamlit, FastAPI, Flask, Gradio, Django, FastMCP) include automatic port detection
 - **Production Ready** - Built-in monitoring, logging, and secure secret management
 
 ## Key Features
@@ -29,9 +29,9 @@ https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 - 🚀 **Easy Installation** - Install from GitHub, ZIP files, or local folders with drag & drop
 - ⚡ **One-Click Launch** - Start and stop apps instantly with visual status indicators
 - 📊 **Real-time Monitoring** - Live CPU and memory usage graphs for each application
-- 📝 **Integrated Logs** - View stdout/stderr output with syntax highlighting
+- 📝 **Integrated Logs** - Color-coded log viewer for easy reading
 - 🔐 **Secure Secrets** - Encrypted storage for API keys and sensitive data
-- 🌐 **Web App Support** - Auto-detect ports and open web apps in your browser
+- 🌐 **Web App Support** - Auto-detect ports from logs and provides quick launch button for web interfaces
 - 🌍 **Multi-language** - Full English and Japanese interface support
 
 ## Screenshots
@@ -76,10 +76,19 @@ Download the latest version for your platform:
 
 ### Usage
 
-1. **Launch UV Dash** - The app will check if `uv` is installed and offer to install it if needed
-2. **Click "New App"** - Add an application from GitHub, ZIP file, or local folder
-3. **Click "Run"** - Start your application with one click
-4. **View in Browser** - Web apps automatically open when ready
+1. **Launch UV Dash** - The app checks if `uv` is installed and offers one-click installation if needed
+2. **Add Applications** - Install from three sources:
+   - **GitHub**: Clone repositories (with branch/tag support)
+   - **ZIP**: Local or remote ZIP archives
+   - **Local Folder**: Use existing projects on your machine
+3. **Run & Monitor** - Start apps with one click and monitor real-time CPU/memory usage
+4. **View Logs & Access Web UIs** - Watch live logs and click the 🌐 button to open web applications
+5. **Manage Secrets** - Configure environment variables and encrypted secrets per app
+
+**Advanced Features**:
+- Configure Python version (defaults to 3.13)
+- Custom run commands for any executable
+- Multi-process application support
 
 That's it! For detailed instructions, see the [User Guide](docs/user-guide.md).
 
@@ -100,6 +109,7 @@ UV Dash automatically detects and supports:
 - **Flask** - Traditional web applications
 - **Gradio** - Machine learning demos and interfaces
 - **Django** - Full-stack web framework
+- **FastMCP** - Model Context Protocol servers
 - **Custom CLI apps** - Any Python application with a run command
 
 ## Tech Stack
