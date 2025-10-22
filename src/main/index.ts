@@ -535,7 +535,7 @@ ipcMain.handle('get-secret-usage', async (_event, secretId: string) => {
 ipcMain.handle('select-directory', async () => {
   const { dialog } = await import('electron');
   const result = await dialog.showOpenDialog({
-    properties: ['openDirectory'],
+    properties: ['openDirectory', 'showHiddenFiles'],
     title: 'Select Project Directory',
   });
 
