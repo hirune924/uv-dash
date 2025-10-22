@@ -1,7 +1,7 @@
 {
   "name": "uv-dash",
   "version": "0.1.0",
-  "description": "Electron + uv desktop client for running Python applications",
+  "description": "Python application launcher powered by uv",
   "main": "dist/main/index.js",
   "author": "hirune924 <nori.o920924@outlook.jp>",
   "license": "MIT",

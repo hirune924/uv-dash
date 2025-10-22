@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="logo/logo.png" alt="UV Dash Logo" width="200"/>
-  <p><strong>A desktop application for easily managing and running Python applications</strong></p>
+  <p><strong>Python application launcher powered by uv</strong></p>
 
   [![Test](https://github.com/hirune924/uv-dash/actions/workflows/test.yml/badge.svg)](https://github.com/hirune924/uv-dash/actions/workflows/test.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,7 +14,7 @@
 
 ## Overview
 
-UV Dash is a desktop application that makes Python development accessible to everyone. Install and run [uv](https://github.com/astral-sh/uv)-managed Python applications with just a few clicks—no terminal or command-line knowledge required.
+UV Dash makes it easy to run and manage Python applications without using the command line. From installation and launch to monitoring and secrets management, everything is handled through the GUI for [uv](https://github.com/astral-sh/uv)-based Python apps and shell scripts.
 
 https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 
@@ -29,7 +29,7 @@ https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 - 🚀 **Easy Installation** - Install from GitHub, ZIP files, or local folders with drag & drop
 - ⚡ **One-Click Launch** - Start and stop apps instantly with visual status indicators
 - 📊 **Real-time Monitoring** - Live CPU and memory usage graphs for each application
-- 📝 **Integrated Logs** - View stdout/stderr output with syntax highlighting
+- 📝 **Integrated Logs** - Color-coded log viewer for easy reading
 - 🔐 **Secure Secrets** - Encrypted storage for API keys and sensitive data
 - 🌐 **Web App Support** - Auto-detect ports from logs and provides quick launch button for web interfaces
 - 🌍 **Multi-language** - Full English and Japanese interface support

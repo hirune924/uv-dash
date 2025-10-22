@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="logo/logo.png" alt="UV Dash Logo" width="200"/>
-  <p><strong>Pythonアプリケーションを簡単に管理・実行するデスクトップアプリ</strong></p>
+  <p><strong>uvベースのPythonアプリランチャー</strong></p>
 
   [![Test](https://github.com/hirune924/uv-dash/actions/workflows/test.yml/badge.svg)](https://github.com/hirune924/uv-dash/actions/workflows/test.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,7 +14,7 @@
 
 ## 概要
 
-UV Dashは、Pythonアプリケーションの開発を誰でも簡単にできるようにするデスクトップアプリケーションです。[uv](https://github.com/astral-sh/uv)で管理されたPythonアプリケーションを、数クリックでインストール・実行できます。ターミナルやコマンドラインの知識は一切不要です。
+UV Dashを使えば、コマンドライン操作なしでPythonアプリを簡単に実行・管理できます。[uv](https://github.com/astral-sh/uv)ベースのPythonアプリやシェルスクリプトのインストール・起動からモニタリング、環境変数・シークレットの管理まで、すべてGUIで完結します。
 
 https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 
@@ -29,7 +29,7 @@ https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 - 🚀 **簡単インストール** - GitHub、ZIP、ローカルフォルダからドラッグ&ドロップでインストール
 - ⚡ **ワンクリック起動** - ビジュアル表示でアプリを即座に起動・停止
 - 📊 **リアルタイムモニタリング** - 各アプリのCPU・メモリ使用量をグラフで表示
-- 📝 **統合ログビューア** - stdout/stderrをシンタックスハイライト表示
+- 📝 **統合ログビューア** - 見やすく色分けされたログ表示
 - 🔐 **安全なシークレット管理** - APIキーや機密データを暗号化して保存
 - 🌐 **Webアプリ対応** - ログからポートを自動検出し、Webインターフェースへのクイック起動ボタンを提供
 - 🌍 **多言語対応** - 日本語と英語の完全サポート
