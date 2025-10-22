@@ -1,6 +1,6 @@
 {
   "name": "uv-dash",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Python application launcher powered by uv",
   "main": "dist/main/index.js",
   "author": "hirune924 <nori.o920924@outlook.jp>",
