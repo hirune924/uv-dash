@@ -74,6 +74,8 @@ Download the latest version for your platform:
 
 **Requirements**: macOS 13+ / Windows 10+ / Ubuntu LTS
 
+> **Note for macOS Apple Silicon users**: You may encounter a certificate error when installing the ARM64 version. If this occurs, please use the Intel version (which runs via Rosetta 2) or run `xattr -dr com.apple.quarantine "/Applications/UV Dash.app"` in Terminal after installation to resolve the issue.
+
 ### Usage
 
 1. **Launch UV Dash** - The app checks if `uv` is installed and offers one-click installation if needed

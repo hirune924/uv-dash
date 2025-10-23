@@ -74,6 +74,8 @@ https://github.com/user-attachments/assets/59c36a02-6f8c-4e6d-9293-e436716d5001
 
 **必要要件**: macOS 13以上 / Windows 10以上 / Ubuntu LTS
 
+> **macOS Apple Siliconユーザーへの注意**: ARM64版のインストール時に証明書エラーが表示される場合があります。その場合は、Intel版（Rosetta 2経由で動作）をご利用いただくか、インストール後にターミナルで `xattr -dr com.apple.quarantine "/Applications/UV Dash.app"` を実行することで解決できます。
+
 ### 使い方
 
 1. **UV Dashを起動** - アプリが`uv`のインストール状況を確認し、必要に応じてワンクリックインストールを提案
