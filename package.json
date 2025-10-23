@@ -57,6 +57,7 @@
   "build": {
     "appId": "com.uvdash.app",
     "productName": "UV Dash",
+    "afterPack": "./scripts/afterPack.js",
     "files": [
       "dist/**/*",
       "package.json"
